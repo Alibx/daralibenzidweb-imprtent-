@@ -20,6 +20,9 @@ function getPoolConfig() {
       queueLimit: 0,
       charset: "utf8mb4",
       dateStrings: true,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 10000,
+      connectTimeout: 30000,
     };
   }
 
@@ -35,6 +38,9 @@ function getPoolConfig() {
     queueLimit: 0,
     charset: "utf8mb4",
     dateStrings: true,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
+    connectTimeout: 30000,
   };
 }
 
