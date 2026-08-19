@@ -1,0 +1,18 @@
+{
+  "name": "dar-ali-api-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "dev": "node --watch ./src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "mysql2": "^3.12.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

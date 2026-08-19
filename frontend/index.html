@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>دار علي بن زيد للطباعة والنشر</title>
+  <meta name="description"
+    content="دار علي بن زيد للطباعة والنشر — منارة للمعرفة ومرجع للباحثين والمثقفين في الجزائر والوطن العربي" />
+  <meta property="og:title" content="دار علي بن زيد للطباعة والنشر" />
+  <meta property="og:description" content="نشر المعرفة... إرث يدوم" />
+  <meta property="og:type" content="website" />
+  <!-- ▼ API CONFIG: replace the URL below with your deployed API server URL ▼ -->
+  <script>window.__API_BASE__ = "https://arabic-house-1.onrender.com";</script>
+  <!-- ▲ API CONFIG ▲ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    crossorigin="anonymous" />
+</head>
+
+<body>
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- OVERLAY BG (mobile drawer) -->
+  <div id="overlayBg" class="overlay-bg"></div>
+
+  <!-- MOBILE DRAWER -->
+  <nav id="mobileDrawer" class="mobile-drawer" role="navigation" aria-label="القائمة الرئيسية">
+    <div class="drawer-header">
+      <span style="
+            font-family: &quot;Amiri&quot;, serif;
+            color: var(--gold);
+            font-size: 1.3rem;
+            font-weight: 700;
+          ">دار علي بن زيد</span>
+      <button id="drawerClose" class="drawer-close" aria-label="إغلاق">
+        ✕
+      </button>
+    </div>
+    <ul class="mobile-links">
+      <li><a href="#home">الرئيسية</a></li>
+      <li><a href="#publications">التأليفات</a></li>
+      <li><a href="#about">من نحن</a></li>
+      <li><a href="#contact">تواصل معنا</a></li>
+    </ul>
+  </nav>
+
+  <!-- NAVBAR -->
+  <header id="navbar" class="navbar" role="banner">
+    <div class="navbar-logo">
+      <span class="logo-main">دار علي بن زيد</span>
+      <span class="logo-sub">للطباعة والنشر</span>
+    </div>
+    <ul class="navbar-links">
+      <li><a href="#home">الرئيسية</a></li>
+      <li><a href="#publications">المؤلفات</a></li>
+      <li><a href="#about">من نحن</a></li>
+      <li><a href="#contact">تواصل معنا</a></li>
+    </ul>
+    <button id="hamburger" class="hamburger" aria-label="فتح القائمة">
+      <span></span><span></span><span></span>
+    </button>
+  </header>
+
+  <!-- HERO -->
+  <section id="home" class="hero">
+    <div class="hero-bg">
+      <div class="book-shape">📚</div>
+      <div class="book-shape">📖</div>
+      <div class="book-shape">📕</div>
+      <div class="book-shape">📗</div>
+      <div class="book-shape">📘</div>
+      <div class="book-shape">✍️</div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        دار علي بن زيد للطباعة والنشر — بسكرة، الجزائر
+      </div>
+      <h1 id="heroTitle">نشر المعرفة... إرث يدوم</h1>
+      <p id="heroSubtitle" class="hero-subtitle"></p>
+      <div class="hero-btns">
+        <a href="#publications" class="btn-primary">اكتشف تأليفاتنا ←</a>
+        <a href="#contact" class="btn-outline">تواصل معنا</a>
+      </div>
+    </div>
+    <div class="hero-scroll" aria-hidden="true">اكتشف</div>
+  </section>
+
+  <!-- STATS BAR -->
+  <div id="statsBar" class="stats-bar section-animate">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-number" id="statYears" data-target="22">
+          <span class="num">0</span><span class="stat-plus">+</span>
+        </span>
+        <span class="stat-label">سنوات الخبرة</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="statBooks" data-target="150">
+          <span class="num">0</span><span class="stat-plus">+</span>
+        </span>
+        <span class="stat-label">كتاب منشور</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="statReaders" data-target="5000">
+          <span class="num">0</span><span class="stat-plus">+</span>
+        </span>
+        <span class="stat-label">قارئ راضٍ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PUBLICATIONS -->
+  <section id="publications" class="section publications section-animate">
+    <div class="section-header">
+      <span class="section-label">مكتبتنا</span>
+      <h2 class="section-title">التأليفات والإصدارات</h2>
+      <div class="section-line"></div>
+      <p class="section-subtitle">
+        اكتشف مجموعتنا المتنوعة من الكتب الأكاديمية والثقافية
+      </p>
+    </div>
+    <div id="filterTabs" class="filter-tabs" role="tablist" aria-label="تصفية الكتب"></div>
+    <div id="booksGrid" class="books-grid"></div>
+  </section>
+
+  <!-- BOOK MODAL -->
+  <div id="bookModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle" class="modal-title"></h3>
+        <button id="modalClose" class="modal-close" aria-label="إغلاق">
+          ✕
+        </button>
+      </div>
+      <div id="modalCover" class="modal-cover" style="
+            font-size: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+          ">
+        📖
+      </div>
+      <div class="modal-body">
+        <div id="modalMeta" class="modal-meta"></div>
+        <p id="modalDesc" class="modal-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <section id="about" class="section about section-animate">
+    <div class="section-header">
+      <span class="section-label" style="color: #8b6914">تعرف علينا</span>
+      <h2 class="section-title">من نحن</h2>
+      <div class="section-line" style="background: #8b6914"></div>
+    </div>
+    <div class="about-grid">
+      <div class="about-text">
+        <h3>دار علي بن زيد للطباعة والنشر</h3>
+        <p id="aboutMain"></p>
+        <div class="about-cards">
+          <div class="about-card">
+            <h4>🎯 رسالتنا</h4>
+            <p id="aboutMission"></p>
+          </div>
+          <div class="about-card">
+            <h4>🔭 رؤيتنا</h4>
+            <p id="aboutVision"></p>
+          </div>
+        </div>
+      </div>
+      <div class="quote-block">
+        <blockquote>
+          "الكتاب أداة الحضارة، وناشره رسول المعرفة عبر الأجيال."
+        </blockquote>
+        <cite>— دار علي بن زيد للطباعة والنشر</cite>
+        <hr style="
+              border: none;
+              border-top: 1px solid var(--border);
+              margin: 1.5rem 0;
+            " />
+        <p style="
+              color: var(--text-muted);
+              font-size: 0.88rem;
+              line-height: 1.7;
+            ">
+          منذ تأسيسنا في مدينة بسكرة، ونحن نضع بين يدي القارئ أرقى ما أنتجه
+          الفكر الجزائري، مؤمنين بأن نشر المعرفة رسالة لا تقل قدساً عن أي
+          رسالة إنسانية نبيلة.
+        </p>
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="timeline section-animate">
+      <h3 class="timeline-title" style="color: var(--navy)">
+        مسيرتنا عبر السنين
+      </h3>
+      <div id="timelineTrack" class="timeline-track"></div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section id="testimonials" class="section testimonials section-animate">
+    <div class="section-header">
+      <span class="section-label">آراء شركائنا</span>
+      <h2 class="section-title">ماذا يقولون عنا</h2>
+      <div class="section-line"></div>
+    </div>
+    <div id="testimonialsGrid" class="testimonials-grid"></div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="section contact section-animate">
+    <div class="section-header">
+      <span class="section-label">نرحب بك</span>
+      <h2 class="section-title">تواصل معنا</h2>
+      <div class="section-line"></div>
+      <p class="section-subtitle">
+        هل لديك كتاب تريد نشره؟ أو استفسار؟ تواصل معنا بكل سهولة
+      </p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-form-box">
+        <h3 style="
+              font-size: 1.3rem;
+              color: var(--text-light);
+              margin-bottom: 1.5rem;
+            ">
+          أرسل لنا رسالة
+        </h3>
+        <form id="contactForm" novalidate>
+          <div class="form-group">
+            <label class="form-label">الاسم الكامل <span style="color: var(--danger)">*</span></label>
+            <input type="text" name="name" class="form-input" placeholder="محمد أحمد..." />
+          </div>
+          <div class="form-group">
+            <label class="form-label">البريد الإلكتروني
+              <span style="color: var(--danger)">*</span></label>
+            <input type="email" name="email" class="form-input" placeholder="example@email.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">الموضوع <span style="color: var(--danger)">*</span></label>
+            <select name="subject" class="form-select">
+              <option value="">اختر الموضوع...</option>
+              <option>طلب نشر كتاب</option>
+              <option>الاستفسار عن إصدار</option>
+              <option>شراكة ومراسلة</option>
+              <option>طلب نسخة من كتاب</option>
+              <option>أخرى</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">الرسالة <span style="color: var(--danger)">*</span></label>
+            <textarea name="message" class="form-textarea" placeholder="اكتب رسالتك هنا..."></textarea>
+          </div>
+          <button type="submit" class="btn-submit">إرسال الرسالة ✉️</button>
+        </form>
+      </div>
+      <div class="contact-info-box">
+        <h3 class="contact-info-title">معلومات التواصل</h3>
+        <div class="info-item">
+          <div class="info-icon">📍</div>
+          <div>
+            <div class="info-label">العنوان</div>
+            <div id="contactAddress" class="info-value"></div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">📞</div>
+          <div>
+            <div class="info-label">الهاتف</div>
+            <div id="contactPhone" class="info-value"></div>
+          </div>
+        </div>
+        <div class="info-item" id="contactPhone2Item" style="display:none">
+          <div class="info-icon">📞</div>
+          <div>
+            <div class="info-label">هاتف 2</div>
+            <div id="contactPhone2" class="info-value"></div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">✉️</div>
+          <div>
+            <div class="info-label">البريد الإلكتروني</div>
+            <div id="contactEmail" class="info-value"></div>
+          </div>
+        </div>
+        <div class="info-item">
+          <div class="info-icon">🕐</div>
+          <div>
+            <div class="info-label">ساعات العمل</div>
+            <div id="contactHours" class="info-value"></div>
+          </div>
+        </div>
+        <div class="social-links" style="margin-top: 0.5rem">
+          <a id="socialFb" class="social-btn" href="#" target="_blank" rel="noopener" title="فيسبوك"
+            style="display: none"><i class="fa-brands fa-facebook-f"></i></a>
+          <a id="socialIg" class="social-btn" href="#" target="_blank" rel="noopener" title="إنستغرام"
+            style="display: none"><i class="fa-brands fa-instagram"></i></a>
+          <a id="socialWa" class="social-btn" href="#" target="_blank" rel="noopener" title="واتساب"
+            style="display: none"><i class="fa-brands fa-whatsapp"></i></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo-main">دار علي بن زيد</div>
+        <span class="logo-sub">للطباعة والنشر</span>
+        <p style="margin-top: 0.8rem">
+          مؤسسة جزائرية متخصصة في النشر الأكاديمي والثقافي، تسعى إلى إثراء
+          المكتبة العربية بأرقى الإصدارات.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <ul>
+          <li><a href="#home">الرئيسية</a></li>
+          <li><a href="#publications">التأليفات</a></li>
+          <li><a href="#about">من نحن</a></li>
+          <li><a href="#contact">تواصل معنا</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>التواصل</h4>
+        <ul>
+          <li>
+            <a href="mailto:info@daralibenzid.dz">info@daralibenzid.dz</a>
+          </li>
+          <li><a href="tel:+213770921426">+213 770 921 426</a></li>
+          <li>
+            <span style="color: var(--text-muted)">بسكرة، الجزائر</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p id="footerCopyright"></p>
+    </div>
+  </footer>
+
+  <!-- FLOATING ADMIN BUTTON -->
+  <a href="./admin.html" class="admin-float" title="لوحة تحكم الأدمن">⚙️ لوحة التحكم</a>
+
+  <script type="module" src="./js/main.js?v=5"></script>
+</body>
+
+</html>
