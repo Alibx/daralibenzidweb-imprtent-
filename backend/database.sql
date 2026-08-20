@@ -17,7 +17,11 @@ CREATE TABLE IF NOT EXISTS `about` (
 CREATE TABLE IF NOT EXISTS `admins` (
     `id` INT NOT NULL AUTO_INCREMENT,
     `username` VARCHAR(100) NOT NULL,
+    `name` VARCHAR(255) DEFAULT 'المسؤول',
     `password_hash` VARCHAR(255) NOT NULL,
+    `role` VARCHAR(50) DEFAULT 'admin',
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

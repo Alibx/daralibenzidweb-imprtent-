@@ -690,18 +690,49 @@ tr:hover td { background: rgba(201,168,76,0.04); color: var(--text-light); }
 .admin-form .toggle-label { color: var(--text-muted); font-size: 0.88rem; }
 
 /* TOGGLE SWITCH */
-.toggle-switch { position: relative; width: 44px; height: 24px; }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  vertical-align: middle;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
 .toggle-slider {
-  position: absolute; inset: 0; background: var(--border); border-radius: 24px;
-  cursor: pointer; transition: var(--transition);
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
 }
 .toggle-slider::before {
-  content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px;
-  background: #fff; border-radius: 50%; transition: var(--transition);
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  top: 2px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
-.toggle-switch input:checked + .toggle-slider { background: var(--gold); }
-.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+.toggle-switch input:checked + .toggle-slider {
+  background: #27ae60;
+  border-color: #2ecc71;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(22px);
+}
 
 /* STAR RATING */
 .star-rating { display: flex; gap: 0.25rem; flex-direction: row-reverse; justify-content: flex-end; }

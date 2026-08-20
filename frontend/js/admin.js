@@ -43,7 +43,43 @@ async function refreshCats() {
   }
 }
 
-// ─── AUTH ─────────────────────────────────────────────────────────────────────
+// ─── AUTH & RBAC (ROLE-BASED ACCESS CONTROL) ──────────────────────────────────
+let currentUser = null;
+
+function getCurrentUser() {
+  if (!currentUser) {
+    try {
+      currentUser = JSON.parse(sessionStorage.getItem('dar_admin_user') || 'null');
+    } catch {
+      currentUser = null;
+    }
+  }
+  return currentUser || { role: 'admin', name: 'المدير العام', username: 'admin' };
+}
+
+function applyRolePermissions() {
+  const user = getCurrentUser();
+  const isStaff = user.role === 'staff';
+
+  // Topbar user indicator
+  const topbarUser = document.getElementById('topbarUser');
+  if (topbarUser) {
+    topbarUser.innerHTML = isStaff
+      ? `💼 <span style="color:var(--gold);font-weight:bold">${escHtml(user.name || user.username)}</span> (موظف مبيعات)`
+      : `👑 <span style="color:var(--gold);font-weight:bold">${escHtml(user.name || user.username)}</span> (المدير العام)`;
+  }
+
+  // Filter sidebar links based on role
+  document.querySelectorAll('.sidebar-link').forEach(link => {
+    const access = link.dataset.roleAccess || 'admin';
+    if (isStaff && access !== 'all') {
+      link.style.display = 'none';
+    } else {
+      link.style.display = 'flex';
+    }
+  });
+}
+
 function initAuth() {
   const loginPage = document.getElementById('loginPage');
   const dashboard = document.getElementById('dashboard');
@@ -66,7 +102,9 @@ function initAuth() {
     try {
       const result = await api.post('/api/admin/login', { username: user, password: pass });
       if (result.success) {
+        currentUser = result.admin;
         sessionStorage.setItem('dar_admin_session', 'true');
+        sessionStorage.setItem('dar_admin_user', JSON.stringify(result.admin));
         loginError.classList.remove('show');
         checkSession();
         await renderAllSections();
@@ -74,8 +112,8 @@ function initAuth() {
         loginError.textContent = result.message || 'اسم المستخدم أو كلمة المرور غير صحيحة';
         loginError.classList.add('show');
       }
-    } catch {
-      loginError.textContent = 'اسم المستخدم أو كلمة المرور غير صحيحة';
+    } catch (err) {
+      loginError.textContent = err.message || 'اسم المستخدم أو كلمة المرور غير صحيحة';
       loginError.classList.add('show');
     } finally {
       btn.disabled = false;
@@ -83,12 +121,16 @@ function initAuth() {
   });
 
   logoutBtn.addEventListener('click', () => {
+    currentUser = null;
     sessionStorage.removeItem('dar_admin_session');
+    sessionStorage.removeItem('dar_admin_user');
     checkSession();
   });
 
   checkSession();
-  if (sessionStorage.getItem('dar_admin_session') === 'true') renderAllSections();
+  if (sessionStorage.getItem('dar_admin_session') === 'true') {
+    renderAllSections();
+  }
 }
 
 // ─── SIDEBAR + NAVIGATION ─────────────────────────────────────────────────────
@@ -123,6 +165,15 @@ function initSidebar() {
 }
 
 async function showSection(sec) {
+  const user = getCurrentUser();
+  const isStaff = user.role === 'staff';
+
+  // If staff user tries to navigate to restricted sections, force redirect to orders
+  const staffAllowed = ['orders', 'coupons', 'delivery'];
+  if (isStaff && !staffAllowed.includes(sec)) {
+    sec = 'orders';
+  }
+
   currentSection = sec;
   document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
@@ -135,6 +186,7 @@ async function showSection(sec) {
     categories: 'إدارة التصنيفات',
     coupons: 'إدارة أكواد الخصم',
     delivery: 'أسعار التوصيل (58 ولاية)',
+    staff: 'إدارة الموظفين والصلاحيات',
     about: 'من نحن',
     messages: 'الرسائل الواردة',
     testimonials: 'الشهادات',
@@ -149,6 +201,7 @@ async function showSection(sec) {
   if (sec === 'categories') await renderCategoriesSection();
   if (sec === 'coupons') await renderCouponsSection();
   if (sec === 'delivery') await renderDeliverySection();
+  if (sec === 'staff') await renderStaffSection();
   if (sec === 'about') await renderAboutSection();
   if (sec === 'messages') await renderMessagesSection();
   if (sec === 'testimonials') await renderTestimonialsSection();
@@ -157,9 +210,12 @@ async function showSection(sec) {
 }
 
 async function renderAllSections() {
+  applyRolePermissions();
   await refreshCats();
   await updateUnreadBadge();
-  await showSection('dashboard');
+  const user = getCurrentUser();
+  const initialSec = user.role === 'staff' ? 'orders' : 'dashboard';
+  await showSection(initialSec);
 }
 
 // ─── UNREAD BADGE ─────────────────────────────────────────────────────────────
@@ -1486,6 +1542,198 @@ function initDeliverySection() {
   });
 }
 
+// ─── SECTION: STAFF MANAGEMENT ────────────────────────────────────────────────
+let adminStaffList = [];
+let staffSearchQuery = '';
+
+async function renderStaffSection() {
+  try {
+    const data = await api.get('/api/admin/staff');
+    adminStaffList = Array.isArray(data) ? data : [];
+  } catch {
+    adminStaffList = [];
+  }
+
+  const tbody = document.getElementById('staffTbody');
+  if (!tbody) return;
+
+  const filtered = adminStaffList.filter(s => {
+    const q = staffSearchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (s.name && s.name.toLowerCase().includes(q)) ||
+           (s.username && s.username.toLowerCase().includes(q)) ||
+           (s.role && s.role.toLowerCase().includes(q));
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2.5rem">لا يوجد موظفون مطابقون لبحثك</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => {
+    const isAdmin = s.role === 'admin';
+    const roleBadge = isAdmin
+      ? `<span style="background:rgba(201,168,76,0.18);color:var(--gold);border:1px solid var(--gold);padding:0.25rem 0.65rem;border-radius:6px;font-size:0.82rem;font-weight:700;display:inline-flex;align-items:center;gap:0.3rem">👑 مدير عام (صلاحية كاملة)</span>`
+      : `<span style="background:rgba(52,152,219,0.18);color:#3498db;border:1px solid #3498db;padding:0.25rem 0.65rem;border-radius:6px;font-size:0.82rem;font-weight:700;display:inline-flex;align-items:center;gap:0.3rem">💼 موظف مبيعات وتوصيل</span>`;
+
+    const statusBadge = s.is_active
+      ? `<span style="color:#2ecc71;font-weight:700;font-size:0.88rem;display:inline-flex;align-items:center;gap:0.3rem">● نشط ومفعل</span>`
+      : `<span style="color:#e74c3c;font-weight:700;font-size:0.88rem;display:inline-flex;align-items:center;gap:0.3rem">● معطل ⛔</span>`;
+
+    const createdDate = s.created_at ? new Date(s.created_at).toLocaleDateString('ar-DZ') : '—';
+    const canDelete = s.id !== 1;
+
+    return `
+    <tr id="staff-row-${s.id}">
+      <td><strong style="color:var(--gold)">#${s.id}</strong></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(201,168,76,0.2);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.9rem">
+            ${isAdmin ? '👑' : '👤'}
+          </div>
+          <div>
+            <div style="font-weight:700;color:var(--text-light);font-size:0.95rem">${escHtml(s.name || s.username)}</div>
+            ${s.id === 1 ? '<small style="color:var(--gold);font-size:0.75rem">الحساب الرئيسي</small>' : ''}
+          </div>
+        </div>
+      </td>
+      <td><code style="background:rgba(255,255,255,0.06);padding:0.2rem 0.5rem;border-radius:4px;color:var(--text-light)">${escHtml(s.username)}</code></td>
+      <td>${roleBadge}</td>
+      <td>${statusBadge}</td>
+      <td style="color:var(--text-muted);font-size:0.85rem">${createdDate}</td>
+      <td>
+        <div class="action-btns" style="display:flex;gap:0.4rem">
+          <button class="btn-edit" onclick="editStaff(${s.id})" title="تعديل بيانات الموظف والصلاحية">✏️</button>
+          ${canDelete ? `<button class="btn-del" onclick="deleteStaff(${s.id}, '${escHtml(s.name || s.username)}')" title="حذف الموظف">🗑️</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openStaffDrawer(staff = null) {
+  const drawer = document.getElementById('staffDrawer');
+  const overlay = document.getElementById('staffDrawerOverlay');
+  const title = document.getElementById('staffDrawerTitle');
+  const editId = document.getElementById('staffEditId');
+  const nameIn = document.getElementById('staffNameInput');
+  const userIn = document.getElementById('staffUsernameInput');
+  const roleIn = document.getElementById('staffRoleInput');
+  const passIn = document.getElementById('staffPasswordInput');
+  const passLbl = document.getElementById('staffPasswordLabel');
+  const passHint = document.getElementById('staffPasswordHint');
+  const activeIn = document.getElementById('staffActiveInput');
+
+  if (staff) {
+    title.textContent = `تعديل بيانات الموظف: ${staff.name || staff.username}`;
+    editId.value = staff.id;
+    nameIn.value = staff.name || '';
+    userIn.value = staff.username || '';
+    userIn.disabled = staff.id === 1; // Cannot change main admin username
+    roleIn.value = staff.role || 'staff';
+    roleIn.disabled = staff.id === 1; // Cannot demote main admin
+    passIn.value = '';
+    passLbl.innerHTML = `كلمة المرور الجديدة <span style="font-weight:normal;color:var(--text-muted);font-size:0.8rem">(اختياري)</span>`;
+    passHint.style.display = 'block';
+    activeIn.checked = staff.is_active !== 0;
+  } else {
+    title.textContent = 'إضافة موظف جديد';
+    editId.value = '';
+    nameIn.value = '';
+    userIn.value = '';
+    userIn.disabled = false;
+    roleIn.value = 'staff';
+    roleIn.disabled = false;
+    passIn.value = '';
+    passLbl.innerHTML = `كلمة المرور <span class="req" style="color:var(--danger)">*</span>`;
+    passHint.style.display = 'none';
+    activeIn.checked = true;
+  }
+
+  drawer?.classList.add('open');
+  overlay?.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeStaffDrawer() {
+  document.getElementById('staffDrawer')?.classList.remove('open');
+  document.getElementById('staffDrawerOverlay')?.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+window.editStaff = function(id) {
+  const staff = adminStaffList.find(s => s.id === id);
+  if (staff) openStaffDrawer(staff);
+};
+
+window.deleteStaff = function(id, name) {
+  confirmDialog(`هل أنت متأكد من رغبتك في حذف الموظف (${name}) نهائياً؟`, async () => {
+    try {
+      await api.del(`/api/admin/staff/${id}`);
+      toast('تم حذف الموظف بنجاح');
+      await renderStaffSection();
+    } catch (err) {
+      toast('تعذّر حذف الموظف: ' + (err.message || ''), 'error');
+    }
+  });
+};
+
+function initStaffSection() {
+  document.getElementById('addStaffBtn')?.addEventListener('click', () => openStaffDrawer(null));
+  document.getElementById('staffDrawerClose')?.addEventListener('click', closeStaffDrawer);
+  document.getElementById('staffDrawerOverlay')?.addEventListener('click', closeStaffDrawer);
+  document.getElementById('staffDrawerCancel')?.addEventListener('click', closeStaffDrawer);
+
+  document.getElementById('staffSearch')?.addEventListener('input', e => {
+    staffSearchQuery = e.target.value;
+    renderStaffSection();
+  });
+
+  document.getElementById('btnSaveStaff')?.addEventListener('click', async () => {
+    const editId = document.getElementById('staffEditId')?.value;
+    const name = document.getElementById('staffNameInput')?.value.trim();
+    const username = document.getElementById('staffUsernameInput')?.value.trim();
+    const role = document.getElementById('staffRoleInput')?.value;
+    const password = document.getElementById('staffPasswordInput')?.value.trim();
+    const is_active = document.getElementById('staffActiveInput')?.checked ? 1 : 0;
+
+    if (!name) { toast('يرجى كتابة الاسم الكامل للموظف', 'error'); return; }
+    if (!username) { toast('يرجى كتابة اسم المستخدم', 'error'); return; }
+    if (!editId && (!password || password.length < 4)) {
+      toast('يرجى كتابة كلمة مرور للموظف (4 أحرف فأكثر)', 'error');
+      return;
+    }
+    if (editId && password && password.length < 4) {
+      toast('كلمة المرور يجب أن لا تقل عن 4 أحرف', 'error');
+      return;
+    }
+
+    const payload = { name, username, role, is_active };
+    if (password) payload.password = password;
+
+    const btn = document.getElementById('btnSaveStaff');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الحفظ...';
+
+    try {
+      if (editId) {
+        await api.put(`/api/admin/staff/${editId}`, payload);
+        toast('تم تحديث بيانات الموظف بنجاح');
+      } else {
+        await api.post('/api/admin/staff', payload);
+        toast('تمت إضافة الموظف الجديد بنجاح');
+      }
+      closeStaffDrawer();
+      await renderStaffSection();
+    } catch (err) {
+      toast('تعذّر حفظ الموظف: ' + (err.message || ''), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'حفظ الموظف';
+    }
+  });
+}
+
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
@@ -1495,9 +1743,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initCategoriesSection();
   initCouponsSection();
   initDeliverySection();
+  initStaffSection();
   initAboutSection();
   initMessagesSection();
   initTestimonialsSection();
   initContactSection();
   initSettingsSection();
 });
+

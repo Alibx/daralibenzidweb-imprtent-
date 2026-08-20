@@ -90,39 +90,42 @@
           <div class="logo-sub">للطباعة والنشر — لوحة التحكم</div>
         </div>
         <nav class="sidebar-nav">
-          <button class="sidebar-link active" data-section="dashboard">
+          <button class="sidebar-link active" data-section="dashboard" data-role-access="admin">
             <span class="link-icon">📊</span> لوحة الإحصاء
           </button>
-          <button class="sidebar-link" data-section="orders">
+          <button class="sidebar-link" data-section="orders" data-role-access="all">
             <span class="link-icon">📦</span> الطلبات الواردة
             <span id="orderBadge" class="sidebar-badge" style="display: none; background: var(--gold); color: var(--navy); font-weight: bold">0</span>
           </button>
-          <button class="sidebar-link" data-section="books">
+          <button class="sidebar-link" data-section="books" data-role-access="admin">
             <span class="link-icon">📚</span> إدارة الكتب
           </button>
-          <button class="sidebar-link" data-section="categories">
+          <button class="sidebar-link" data-section="categories" data-role-access="admin">
             <span class="link-icon">🏷️</span> إدارة التصنيفات
           </button>
-          <button class="sidebar-link" data-section="coupons">
+          <button class="sidebar-link" data-section="coupons" data-role-access="all">
             <span class="link-icon">🎟️</span> أكواد الخصم
           </button>
-          <button class="sidebar-link" data-section="delivery">
+          <button class="sidebar-link" data-section="delivery" data-role-access="all">
             <span class="link-icon">🚚</span> أسعار التوصيل (58 ولاية)
           </button>
-          <button class="sidebar-link" data-section="about">
+          <button class="sidebar-link" data-section="staff" data-role-access="admin">
+            <span class="link-icon">👥</span> إدارة الموظفين
+          </button>
+          <button class="sidebar-link" data-section="about" data-role-access="admin">
             <span class="link-icon">ℹ️</span> من نحن
           </button>
-          <button class="sidebar-link" data-section="messages">
+          <button class="sidebar-link" data-section="messages" data-role-access="admin">
             <span class="link-icon">📣</span> الرسائل الواردة
             <span id="msgBadge" class="sidebar-badge" style="display: none"></span>
           </button>
-          <button class="sidebar-link" data-section="testimonials">
+          <button class="sidebar-link" data-section="testimonials" data-role-access="admin">
             <span class="link-icon">⭐</span> الشهادات
           </button>
-          <button class="sidebar-link" data-section="contact">
+          <button class="sidebar-link" data-section="contact" data-role-access="admin">
             <span class="link-icon">📞</span> معلومات التواصل
           </button>
-          <button class="sidebar-link" data-section="settings">
+          <button class="sidebar-link" data-section="settings" data-role-access="admin">
             <span class="link-icon">⚙️</span> الإعدادات العامة
           </button>
         </nav>
@@ -155,7 +158,7 @@
           </button>
           <span id="topbarTitle" class="topbar-title">لوحة الإحصاء</span>
           <div class="topbar-right">
-            <span style="color: var(--text-muted); font-size: 0.82rem"
+            <span id="topbarUser" style="color: var(--text-light); font-size: 0.88rem"
               >مرحباً، الأدمن</span
             >
           </div>
@@ -679,6 +682,90 @@
                 <tbody id="deliveryRatesTbody"></tbody>
               </table>
             </div>
+          </div>
+
+          <!-- ── SECTION: STAFF MANAGEMENT ── -->
+          <div id="sec-staff" class="admin-section">
+            <div class="toolbar" style="flex-wrap:wrap;gap:0.75rem">
+              <div class="search-box" style="flex:1;min-width:240px">
+                🔍
+                <input
+                  type="search"
+                  id="staffSearch"
+                  placeholder="ابحث باسم الموظف أو اسم المستخدم..."
+                />
+              </div>
+              <button id="addStaffBtn" class="btn-add">+ إضافة موظف جديد</button>
+            </div>
+
+            <div class="table-card">
+              <div class="table-card-header">
+                <span class="table-card-title">👥 قائمة الموظفين وصلاحيات الوصول</span>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>اسم الموظف</th>
+                    <th>اسم المستخدم</th>
+                    <th>نوع الصلاحية</th>
+                    <th>حالة الحساب</th>
+                    <th>تاريخ الإنشاء</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="staffTbody"></tbody>
+              </table>
+            </div>
+
+            <!-- STAFF DRAWER OVERLAY -->
+            <div id="staffDrawerOverlay" class="drawer-overlay"></div>
+            <!-- STAFF DRAWER -->
+            <aside id="staffDrawer" class="admin-drawer">
+              <div class="drawer-head">
+                <span id="staffDrawerTitle" class="drawer-head-title">إضافة موظف جديد</span>
+                <button id="staffDrawerClose" class="modal-close">✕</button>
+              </div>
+              <div class="drawer-body">
+                <form id="staffForm" class="admin-form" novalidate>
+                  <input type="hidden" id="staffEditId" />
+                  <div class="form-group">
+                    <label>الاسم الكامل للموظف <span class="req" style="color:var(--danger)">*</span></label>
+                    <input type="text" id="staffNameInput" name="name" placeholder="مثال: أحمد عبد الله" required />
+                  </div>
+                  <div class="form-group">
+                    <label>اسم المستخدم للدخول (Username) <span class="req" style="color:var(--danger)">*</span></label>
+                    <input type="text" id="staffUsernameInput" name="username" placeholder="مثال: ahmed أو staff1" required style="text-transform:lowercase" />
+                  </div>
+                  <div class="form-group">
+                    <label>نوع الصلاحية <span class="req" style="color:var(--danger)">*</span></label>
+                    <select id="staffRoleInput" name="role" class="form-select">
+                      <option value="staff">💼 موظف مبيعات (الطلبات، التوصيل، أكواد الخصم فقط)</option>
+                      <option value="admin">👑 مدير عام (صلاحية كاملة لجميع الأقسام والإعدادات)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label id="staffPasswordLabel">كلمة المرور <span class="req" style="color:var(--danger)">*</span></label>
+                    <input type="password" id="staffPasswordInput" name="password" placeholder="أدخل كلمة مرور قوية (4 أحرف فأكثر)" />
+                    <small id="staffPasswordHint" style="color:var(--text-muted);font-size:0.78rem;display:none">اترك الحقل فارغاً إذا كنت لا ترغب في تغيير كلمة المرور الحالية</small>
+                  </div>
+                  <div class="form-group">
+                    <label>حالة الحساب</label>
+                    <div class="toggle-wrap">
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="staffActiveInput" name="is_active" checked />
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <span class="toggle-label">حساب مفعل (يمكنه تسجيل الدخول)</span>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div class="drawer-footer">
+                <button id="btnSaveStaff" class="btn-save">حفظ الموظف</button>
+                <button id="staffDrawerCancel" class="btn-cancel-drawer">إلغاء</button>
+              </div>
+            </aside>
           </div>
 
           <!-- ── SECTION 4: ABOUT ── -->
