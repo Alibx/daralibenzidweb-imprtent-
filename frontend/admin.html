@@ -8,7 +8,7 @@
     />
     <title>لوحة التحكم — دار علي بن زيد</title>
     <!-- ▼ API CONFIG: replace the URL below with your deployed API server URL ▼ -->
-    <script>window.__API_BASE__ = "https://arabic-house-1.onrender.com";</script>
+    <script>window.__API_BASE__ = "https://daralibenzidweb.onrender.com";</script>
     <!-- ▲ API CONFIG ▲ -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -93,22 +93,28 @@
           <button class="sidebar-link active" data-section="dashboard">
             <span class="link-icon">📊</span> لوحة الإحصاء
           </button>
+          <button class="sidebar-link" data-section="orders">
+            <span class="link-icon">📦</span> الطلبات الواردة
+            <span id="orderBadge" class="sidebar-badge" style="display: none; background: var(--gold); color: var(--navy); font-weight: bold">0</span>
+          </button>
           <button class="sidebar-link" data-section="books">
             <span class="link-icon">📚</span> إدارة الكتب
           </button>
           <button class="sidebar-link" data-section="categories">
             <span class="link-icon">🏷️</span> إدارة التصنيفات
           </button>
+          <button class="sidebar-link" data-section="coupons">
+            <span class="link-icon">🎟️</span> أكواد الخصم
+          </button>
+          <button class="sidebar-link" data-section="delivery">
+            <span class="link-icon">🚚</span> أسعار التوصيل (58 ولاية)
+          </button>
           <button class="sidebar-link" data-section="about">
             <span class="link-icon">ℹ️</span> من نحن
           </button>
           <button class="sidebar-link" data-section="messages">
             <span class="link-icon">📣</span> الرسائل الواردة
-            <span
-              id="msgBadge"
-              class="sidebar-badge"
-              style="display: none"
-            ></span>
+            <span id="msgBadge" class="sidebar-badge" style="display: none"></span>
           </button>
           <button class="sidebar-link" data-section="testimonials">
             <span class="link-icon">⭐</span> الشهادات
@@ -187,6 +193,44 @@
                   <div class="stat-card-label">الشهادات</div>
                 </div>
               </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">🛍️</div>
+                <div>
+                  <div id="dashOrders" class="stat-card-num">0</div>
+                  <div class="stat-card-label">إجمالي الطلبات</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">💰</div>
+                <div>
+                  <div id="dashRevenue" class="stat-card-num">0 دج</div>
+                  <div class="stat-card-label">إجمالي المبيعات</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Orders Card -->
+            <div class="table-card" style="margin-bottom:1.5rem">
+              <div class="table-card-header">
+                <span class="table-card-title">📦 آخر طلبات الكتب الواردة</span>
+                <button class="btn-add" onclick="window.adminNav('orders')">
+                  عرض كل الطلبات
+                </button>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>رقم الطلب</th>
+                    <th>العميل</th>
+                    <th>الكتاب</th>
+                    <th>الولاية</th>
+                    <th>المجموع</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="recentOrdersTbody"></tbody>
+              </table>
             </div>
 
             <div class="table-card">
@@ -206,6 +250,47 @@
                   </tr>
                 </thead>
                 <tbody id="recentMsgsTbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ── SECTION: ORDERS ── -->
+          <div id="sec-orders" class="admin-section">
+            <div class="toolbar" style="flex-wrap:wrap;gap:0.75rem">
+              <div class="search-box" style="flex:1;min-width:260px">
+                🔍
+                <input
+                  type="search"
+                  id="orderSearch"
+                  placeholder="ابحث باسم المشتري، رقم الهاتف، أو الولاية..."
+                />
+              </div>
+              <div class="order-filter-btns" style="display:flex;gap:0.4rem;flex-wrap:wrap">
+                <button class="filter-tab active" data-order-status="all">الكل</button>
+                <button class="filter-tab" data-order-status="pending">قيد الانتظار ⏳</button>
+                <button class="filter-tab" data-order-status="confirmed">مؤكد ✅</button>
+                <button class="filter-tab" data-order-status="shipped">تم الشحن 🚚</button>
+                <button class="filter-tab" data-order-status="delivered">تم التوصيل 📦</button>
+                <button class="filter-tab" data-order-status="cancelled">ملغي ❌</button>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>التاريخ</th>
+                    <th>المشتري والتواصل</th>
+                    <th>الكتاب والكمية</th>
+                    <th>الولاية والبلدية</th>
+                    <th>المبلغ الإجمالي</th>
+                    <th>كود الخصم</th>
+                    <th>حالة الطلب</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersTbody"></tbody>
               </table>
             </div>
           </div>
@@ -296,6 +381,20 @@
                       <input type="color" name="color" value="#1B6CA8" />
                     </div>
                   </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>سعر الكتاب الورقي (دج) <span class="req" style="color:var(--danger)">*</span></label>
+                      <input type="number" name="price" placeholder="1200" step="10" required />
+                    </div>
+                    <div class="form-group">
+                      <label>سعر التخفيض الاختياري (دج)</label>
+                      <input type="number" name="discount_price" placeholder="990 (اختياري)" step="10" />
+                    </div>
+                    <div class="form-group">
+                      <label>سعر نسخة PDF ($)</label>
+                      <input type="number" name="pdf_price" placeholder="5.00" step="0.5" />
+                    </div>
+                  </div>
                   <div class="form-group full">
                     <label>وصف الكتاب</label>
                     <textarea
@@ -307,13 +406,13 @@
                   <!-- COVER IMAGE -->
                   <div class="form-group full">
                     <label>صورة الغلاف</label>
-                    <input type="url" id="coverUrlInput" class="form-input" placeholder="https://res.cloudinary.com/... (الصق رابط الصورة هنا)" style="margin-bottom:0.5rem;width:100%;box-sizing:border-box">
+                    <input type="text" id="coverUrlInput" class="form-input" placeholder="الصق رابط الصورة أو ارفعها من جهازك أدناه" style="margin-bottom:0.5rem;width:100%;box-sizing:border-box">
                     <div id="coverUploadArea" class="file-upload-area" onclick="document.getElementById('coverFileInput').click()">
                       <img id="coverPreviewImg" style="display:none;max-height:140px;max-width:100%;border-radius:8px;object-fit:cover;margin:0 auto">
                       <div id="coverPlaceholder" class="file-upload-placeholder">
                         <span style="font-size:2rem">🖼️</span>
-                        <span>أو اضغط لرفع صورة (سيتم إرسالها للخادم)</span>
-                        <span class="file-hint" id="coverUploadStatus">PNG، JPG، WEBP (سيتم رفعها للخادم)</span>
+                        <span>أو اضغط لرفع صورة من جهازك</span>
+                        <span class="file-hint" id="coverUploadStatus">PNG، JPG، WEBP</span>
                       </div>
                       <input type="file" id="coverFileInput" accept="image/*" style="display:none">
                     </div>
@@ -323,7 +422,7 @@
                   <!-- PDF -->
                   <div class="form-group full">
                     <label>ملف PDF <span style="color:var(--text-muted);font-weight:400;font-size:0.8rem">(اختياري — للقراءة والتحميل)</span></label>
-                    <input type="url" id="pdfUrlInput" class="form-input" placeholder="https://... (الصق رابط ملف PDF هنا)" style="margin-bottom:0.5rem;width:100%;box-sizing:border-box">
+                    <input type="text" id="pdfUrlInput" class="form-input" placeholder="الصق رابط ملف PDF أو ارفعه أدناه" style="margin-bottom:0.5rem;width:100%;box-sizing:border-box">
                     <div id="pdfUploadArea" class="file-upload-area" onclick="document.getElementById('pdfFileInput').click()">
                       <div id="pdfStatusEl" class="file-upload-placeholder">
                         <span style="font-size:2rem">📄</span>
@@ -439,6 +538,146 @@
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- ── SECTION: COUPONS ── -->
+          <div id="sec-coupons" class="admin-section">
+            <div class="toolbar">
+              <div class="search-box">
+                🔍
+                <input
+                  type="search"
+                  id="couponSearch"
+                  placeholder="ابحث عن كود خصم..."
+                />
+              </div>
+              <button id="addCouponBtn" class="btn-add">+ إضافة كود خصم جديد</button>
+            </div>
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>كود الخصم</th>
+                    <th>نوع الخصم</th>
+                    <th>قيمة الخصم</th>
+                    <th>الحد الأدنى للطلب</th>
+                    <th>مرات الاستخدام</th>
+                    <th>تاريخ الانتهاء</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="couponsTbody"></tbody>
+              </table>
+            </div>
+
+            <!-- COUPON DRAWER OVERLAY -->
+            <div id="couponDrawerOverlay" class="drawer-overlay"></div>
+            <!-- COUPON DRAWER -->
+            <aside id="couponDrawer" class="admin-drawer">
+              <div class="drawer-head">
+                <span id="couponDrawerTitle" class="drawer-head-title">إضافة كود خصم جديد</span>
+                <button id="couponDrawerClose" class="modal-close">✕</button>
+              </div>
+              <div class="drawer-body">
+                <form id="couponForm" class="admin-form" novalidate>
+                  <div class="form-group">
+                    <label>رمز الكوبون (Code) <span class="req" style="color:var(--danger)">*</span></label>
+                    <input type="text" id="couponCodeInput" name="code" placeholder="مثال: DAR10 أو RAMADAN" style="text-transform:uppercase" required />
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>نوع الخصم <span class="req" style="color:var(--danger)">*</span></label>
+                      <select id="couponTypeInput" name="discount_type">
+                        <option value="percent">نسبة مئوية (%)</option>
+                        <option value="fixed">مبلغ ثابت (دج)</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>قيمة الخصم <span class="req" style="color:var(--danger)">*</span></label>
+                      <input type="number" id="couponValueInput" name="discount_value" placeholder="10 أو 200" required step="0.5" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>الحد الأدنى للطلب (دج)</label>
+                      <input type="number" id="couponMinOrderInput" name="min_order" placeholder="0 (بدون حد أدنى)" />
+                    </div>
+                    <div class="form-group">
+                      <label>الحد الأقصى للاستخدام</label>
+                      <input type="number" id="couponMaxUsesInput" name="max_uses" placeholder="غير محدود" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>تاريخ انتهاء الصلاحية (اختياري)</label>
+                    <input type="date" id="couponExpiresInput" name="expires_at" />
+                  </div>
+                  <div class="form-group">
+                    <label>الحالة</label>
+                    <div class="toggle-wrap">
+                      <label class="toggle-switch">
+                        <input type="checkbox" id="couponActiveInput" name="is_active" checked />
+                        <span class="toggle-slider"></span>
+                      </label>
+                      <span class="toggle-label">مفعّل وجاهز للاستخدام</span>
+                    </div>
+                  </div>
+                </form>
+              </div>
+              <div class="drawer-footer">
+                <button class="btn-save" id="btnSaveCoupon">حفظ الكوبون</button>
+                <button id="couponDrawerCancel" class="btn-cancel-drawer">إلغاء</button>
+              </div>
+            </aside>
+          </div>
+
+          <!-- ── SECTION: DELIVERY RATES ── -->
+          <div id="sec-delivery" class="admin-section">
+            <!-- Bulk update card -->
+            <div class="table-card" style="margin-bottom:1.5rem">
+              <div class="table-card-header">
+                <span class="table-card-title">⚡ تحديث أسعار التوصيل لجميع الولايات دفعة واحدة</span>
+              </div>
+              <div style="padding:1.2rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+                <div style="flex:1;min-width:200px">
+                  <label style="font-size:0.85rem;color:var(--text-muted);display:block;margin-bottom:0.3rem">سعر التوصيل للمنزل (الكل)</label>
+                  <input type="number" id="bulkHomePrice" class="form-input" placeholder="مثال: 600" />
+                </div>
+                <div style="flex:1;min-width:200px">
+                  <label style="font-size:0.85rem;color:var(--text-muted);display:block;margin-bottom:0.3rem">سعر التوصيل للمكتب Stop Desk (الكل)</label>
+                  <input type="number" id="bulkDeskPrice" class="form-input" placeholder="مثال: 400" />
+                </div>
+                <button id="btnBulkDeliveryUpdate" class="btn-save" style="padding:0.75rem 1.5rem">تطبيق على 58 ولاية 🚀</button>
+              </div>
+            </div>
+
+            <!-- 58 Wilayas Table -->
+            <div class="table-card">
+              <div class="table-card-header" style="flex-wrap:wrap;gap:0.75rem">
+                <span class="table-card-title">🚚 قائمة أسعار التوصيل (58 ولاية جزائرية مع البلديات)</span>
+                <div class="search-box" style="max-width:280px">
+                  🔍
+                  <input
+                    type="search"
+                    id="deliverySearch"
+                    placeholder="ابحث باسم الولاية أو رقمها..."
+                  />
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>الرمز</th>
+                    <th>اسم الولاية</th>
+                    <th>توصيل للمنزل (دج)</th>
+                    <th>استلام من المكتب Stop Desk (دج)</th>
+                    <th>حالة التوصيل</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="deliveryRatesTbody"></tbody>
+              </table>
             </div>
           </div>
 
@@ -805,6 +1044,69 @@
       <!-- /admin-main -->
     </div>
     <!-- /dashboard -->
+
+    <!-- ═══ INVOICE / ORDER SLIP MODAL ═══ -->
+    <div id="invoiceModal" class="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)">
+      <div class="modal-card" style="max-width:650px;width:100%;background:#fff;color:#111;padding:2rem;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.3);position:relative;direction:rtl;font-family:'Cairo',sans-serif">
+        <button id="invoiceModalClose" style="position:absolute;top:1rem;left:1rem;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
+        <div id="invoicePrintArea">
+          <div style="text-align:center;border-bottom:2px solid #C9A84C;padding-bottom:1rem;margin-bottom:1.5rem">
+            <h2 style="font-family:'Amiri',serif;color:#0D1B2A;margin:0;font-size:1.8rem">دار علي بن زيد للطباعة والنشر</h2>
+            <p style="color:#666;font-size:0.85rem;margin:0.2rem 0 0">وصل تسليم واستلام طلبية — الدفع عند الاستلام</p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;font-size:0.9rem">
+            <div>
+              <p style="margin:0.2rem 0"><strong>رقم الطلب:</strong> <span id="invOrderId">#--</span></p>
+              <p style="margin:0.2rem 0"><strong>التاريخ:</strong> <span id="invDate">--</span></p>
+              <p style="margin:0.2rem 0"><strong>طريقة الدفع:</strong> <span id="invPayment">الدفع عند الاستلام (COD)</span></p>
+            </div>
+            <div>
+              <p style="margin:0.2rem 0"><strong>العميل:</strong> <span id="invCustomerName">--</span></p>
+              <p style="margin:0.2rem 0"><strong>الهاتف:</strong> <span id="invPhone">--</span></p>
+              <p style="margin:0.2rem 0"><strong>الولاية:</strong> <span id="invWilaya">--</span></p>
+              <p style="margin:0.2rem 0"><strong>العنوان:</strong> <span id="invAddress">--</span></p>
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:1.5rem;font-size:0.9rem">
+            <thead>
+              <tr style="background:#0D1B2A;color:#fff">
+                <th style="padding:0.6rem;text-align:right">الكتاب</th>
+                <th style="padding:0.6rem;text-align:center">الكمية</th>
+                <th style="padding:0.6rem;text-align:left">سعر الوحدة</th>
+                <th style="padding:0.6rem;text-align:left">المجموع</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #ddd">
+                <td id="invBookTitle" style="padding:0.6rem;font-weight:bold">--</td>
+                <td id="invQty" style="padding:0.6rem;text-align:center">1</td>
+                <td id="invUnitPrice" style="padding:0.6rem;text-align:left">-- دج</td>
+                <td id="invSubtotal" style="padding:0.6rem;text-align:left">-- دج</td>
+              </tr>
+              <tr style="border-bottom:1px solid #eee">
+                <td colspan="3" style="padding:0.5rem;text-align:right">تكلفة التوصيل:</td>
+                <td id="invDelivery" style="padding:0.5rem;text-align:left">-- دج</td>
+              </tr>
+              <tr id="invDiscountRow" style="border-bottom:1px solid #eee;display:none">
+                <td colspan="3" style="padding:0.5rem;text-align:right;color:#27AE60">الخصم (كوبون):</td>
+                <td id="invDiscount" style="padding:0.5rem;text-align:left;color:#27AE60">-0 دج</td>
+              </tr>
+              <tr style="background:#f8f4eb;font-weight:bold;font-size:1.1rem;color:#0D1B2A">
+                <td colspan="3" style="padding:0.75rem;text-align:right">المبلغ الإجمالي المطلوب تحصيله:</td>
+                <td id="invTotal" style="padding:0.75rem;text-align:left;color:#C9A84C">-- دج</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="border-top:1px dashed #ccc;padding-top:0.8rem;text-align:center;font-size:0.8rem;color:#777">
+            شكراً لتعاملكم مع دار علي بن زيد للنشر — بسكرة، الجزائر | هاتف: +213 770 92 14 26
+          </div>
+        </div>
+        <div style="display:flex;gap:1rem;margin-top:1.5rem">
+          <button onclick="window.print()" class="btn-save" style="flex:1;background:#0D1B2A;color:#C9A84C">🖨️ طباعة الوصل (Print)</button>
+          <button id="btnInvoiceClose" class="btn-cancel" style="padding:0.6rem 1.5rem">إغلاق</button>
+        </div>
+      </div>
+    </div>
 
     <script>
       // Quick nav helper (called from dashboard)

@@ -34,16 +34,70 @@ CREATE TABLE IF NOT EXISTS `books` (
     `title` VARCHAR(500) NOT NULL,
     `author` VARCHAR(255) NOT NULL,
     `description` TEXT,
-    `cover_url` TEXT,
-    `pdf_url` TEXT,
+    `cover_url` MEDIUMTEXT,
+    `pdf_url` MEDIUMTEXT,
     `year` INT DEFAULT NULL,
     `pages` INT DEFAULT NULL,
+    `price` DECIMAL(10,2) DEFAULT 1200.00,
+    `discount_price` DECIMAL(10,2) DEFAULT NULL,
+    `pdf_price` DECIMAL(10,2) DEFAULT 5.00,
     `color` VARCHAR(50) DEFAULT NULL,
     `status` VARCHAR(20) DEFAULT 'published',
     `category_id` INT DEFAULT NULL,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     KEY `idx_category_id` (`category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `orders` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `book_id` INT NOT NULL,
+    `book_title` VARCHAR(500) NOT NULL,
+    `customer_name` VARCHAR(255) NOT NULL,
+    `customer_phone` VARCHAR(100) NOT NULL,
+    `wilaya_code` INT NOT NULL,
+    `wilaya_name` VARCHAR(100) NOT NULL,
+    `commune` VARCHAR(255) NOT NULL,
+    `address` TEXT NOT NULL,
+    `delivery_type` VARCHAR(50) DEFAULT 'home',
+    `quantity` INT DEFAULT 1,
+    `book_price` DECIMAL(10,2) NOT NULL,
+    `delivery_price` DECIMAL(10,2) NOT NULL,
+    `discount_amount` DECIMAL(10,2) DEFAULT 0.00,
+    `coupon_code` VARCHAR(100) DEFAULT NULL,
+    `total_price` DECIMAL(10,2) NOT NULL,
+    `payment_method` VARCHAR(50) DEFAULT 'cod',
+    `payment_status` VARCHAR(50) DEFAULT 'pending',
+    `notes` TEXT,
+    `status` VARCHAR(50) DEFAULT 'pending',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `coupons` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `code` VARCHAR(100) NOT NULL UNIQUE,
+    `discount_type` VARCHAR(20) DEFAULT 'percent',
+    `discount_value` DECIMAL(10,2) NOT NULL,
+    `min_order` DECIMAL(10,2) DEFAULT 0.00,
+    `max_uses` INT DEFAULT NULL,
+    `used_count` INT DEFAULT 0,
+    `expires_at` DATE DEFAULT NULL,
+    `is_active` TINYINT(1) DEFAULT 1,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `delivery_rates` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `wilaya_code` INT NOT NULL UNIQUE,
+    `wilaya_name` VARCHAR(100) NOT NULL,
+    `home_price` DECIMAL(10,2) DEFAULT 600.00,
+    `desk_price` DECIMAL(10,2) DEFAULT 400.00,
+    `is_available` TINYINT(1) DEFAULT 1,
+    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `contact` (

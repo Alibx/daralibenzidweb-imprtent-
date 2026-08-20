@@ -11,7 +11,7 @@
   <meta property="og:description" content="نشر المعرفة... إرث يدوم" />
   <meta property="og:type" content="website" />
   <!-- ▼ API CONFIG: replace the URL below with your deployed API server URL ▼ -->
-  <script>window.__API_BASE__ = "https://arabic-house-1.onrender.com";</script>
+  <script>window.__API_BASE__ = "https://daralibenzidweb.onrender.com";</script>
   <!-- ▲ API CONFIG ▲ -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -351,6 +351,190 @@
       <p id="footerCopyright"></p>
     </div>
   </footer>
+
+  <!-- ═══ MODALS ═══ -->
+
+  <!-- 1. BOOK DETAILS MODAL -->
+  <div id="bookModal" class="modal-overlay">
+    <div class="modal-card">
+      <button id="modalClose" class="modal-close-btn" aria-label="إغلاق">✕</button>
+      <div class="modal-grid">
+        <div id="modalCover" class="modal-cover"></div>
+        <div class="modal-body">
+          <h2 id="modalTitle" class="modal-title"></h2>
+          <div id="modalMeta" class="modal-meta"></div>
+          <div id="modalPricing" class="modal-pricing-box"></div>
+          <p id="modalDesc" class="modal-desc"></p>
+          <div class="modal-actions" id="modalActions"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. ORDER CHECKOUT MODAL (COD) -->
+  <div id="orderModal" class="modal-overlay">
+    <div class="modal-card order-card-modal">
+      <button id="orderModalClose" class="modal-close-btn" aria-label="إغلاق">✕</button>
+      <div class="order-modal-header">
+        <span class="order-modal-badge">🛍️ طلب شراء كتاب</span>
+        <h2 class="order-modal-title">معلومات التوصيل والدفع عند الاستلام</h2>
+        <p class="order-modal-sub">املأ بياناتك وسيصلك الكتاب إلى باب منزلك أو أقرب نقطة استلام في ولايتك</p>
+      </div>
+
+      <div class="order-modal-layout">
+        <!-- Selected Book Preview -->
+        <div class="order-book-summary">
+          <div id="orderBookCover" class="order-book-thumb"></div>
+          <div class="order-book-details">
+            <h3 id="orderBookTitle" class="order-book-name"></h3>
+            <p id="orderBookAuthor" class="order-book-author"></p>
+            <div id="orderBookPriceTag" class="order-book-price"></div>
+            <div class="order-qty-stepper">
+              <span class="qty-label">الكمية:</span>
+              <button type="button" class="btn-qty" id="btnQtyMinus">-</button>
+              <input type="number" id="orderQtyInput" value="1" min="1" max="20" readonly />
+              <button type="button" class="btn-qty" id="btnQtyPlus">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checkout Form -->
+        <form id="orderForm" class="order-form" novalidate>
+          <input type="hidden" id="orderBookId" />
+          
+          <div class="order-form-row">
+            <div class="form-group">
+              <label class="form-label">الاسم الكامل <span class="req" style="color:var(--danger)">*</span></label>
+              <input type="text" id="orderCustomerName" required class="form-input" placeholder="مثال: يوسف بن أحمد" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">رقم الهاتف <span class="req" style="color:var(--danger)">*</span></label>
+              <input type="tel" id="orderCustomerPhone" required class="form-input" placeholder="05 / 06 / 07 XX XX XX" />
+            </div>
+          </div>
+
+          <div class="order-form-row">
+            <div class="form-group">
+              <label class="form-label">الولاية (58 ولاية) <span class="req" style="color:var(--danger)">*</span></label>
+              <select id="orderWilayaSelect" required class="form-select"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">البلدية <span class="req" style="color:var(--danger)">*</span></label>
+              <select id="orderCommuneSelect" required class="form-select">
+                <option value="">-- اختر الولاية أولاً --</option>
+              </select>
+              <input type="text" id="orderCommuneCustom" class="form-input" placeholder="اكتب اسم البلدية يدوياً" style="display:none;margin-top:0.4rem" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">العنوان بالتفصيل <span class="req" style="color:var(--danger)">*</span></label>
+            <input type="text" id="orderAddress" required class="form-input" placeholder="اسم الحي / الشارع / رقم العمارة" />
+          </div>
+
+          <!-- Delivery Type Selection -->
+          <div class="form-group">
+            <label class="form-label">نوع التوصيل</label>
+            <div class="delivery-options">
+              <label class="delivery-opt active" id="optHomeDelivery">
+                <input type="radio" name="orderDeliveryType" value="home" checked />
+                <div class="opt-content">
+                  <span class="opt-title">🏠 توصيل لباب المنزل</span>
+                  <span class="opt-price" id="homeDeliveryPrice">... دج</span>
+                </div>
+              </label>
+              <label class="delivery-opt" id="optDeskDelivery">
+                <input type="radio" name="orderDeliveryType" value="desk" />
+                <div class="opt-content">
+                  <span class="opt-title">🏢 استلام من المكتب (Stop Desk)</span>
+                  <span class="opt-price" id="deskDeliveryPrice">... دج</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Coupon Box -->
+          <div class="coupon-box">
+            <div class="coupon-input-group">
+              <input type="text" id="orderCouponInput" placeholder="هل لديك كود خصم؟" class="coupon-input" />
+              <button type="button" id="btnApplyCoupon" class="btn-apply-coupon">تطبيق</button>
+            </div>
+            <div id="couponStatusMsg" class="coupon-status"></div>
+          </div>
+
+          <!-- Price Calculation Breakdown -->
+          <div class="order-calc-card">
+            <div class="calc-row">
+              <span>سعر الكتب (<span id="calcQty">1</span>):</span>
+              <span id="calcSubtotal">0 دج</span>
+            </div>
+            <div class="calc-row">
+              <span>تكلفة التوصيل:</span>
+              <span id="calcShipping">0 دج</span>
+            </div>
+            <div class="calc-row discount-row" id="calcDiscountRow" style="display:none">
+              <span>الخصم (كوبون):</span>
+              <span id="calcDiscount" class="text-success" style="color:var(--success)">-0 دج</span>
+            </div>
+            <div class="calc-divider"></div>
+            <div class="calc-total-row">
+              <span>المجموع الكلي المطلوب:</span>
+              <span id="calcTotal" class="calc-total-val">0 دج</span>
+            </div>
+            <div class="cod-badge">💵 الدفع نقدًا عند الاستلام بعد استلام الطرد</div>
+          </div>
+
+          <button type="submit" id="btnSubmitOrder" class="btn-confirm-order">
+            🛍️ تأكيد الطلب والدفع عند الاستلام
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. PAYPAL DIGITAL PDF MODAL -->
+  <div id="paypalModal" class="modal-overlay">
+    <div class="modal-card paypal-modal-card">
+      <button id="paypalModalClose" class="modal-close-btn" aria-label="إغلاق">✕</button>
+      <div class="paypal-modal-header">
+        <span class="order-modal-badge">💳 شراء نسخة إلكترونية (PDF)</span>
+        <h2 class="order-modal-title" id="paypalBookTitle"></h2>
+        <p class="order-modal-sub">للقراء من خارج الجزائر: احصل على نسختك الرقمية فوراً وبأمان عبر PayPal</p>
+      </div>
+      <div class="paypal-modal-body">
+        <div class="paypal-price-display">
+          <span>السعر المطلوب:</span>
+          <strong id="paypalPriceVal" class="text-gold" style="font-size:1.8rem;color:var(--gold)">$5.00</strong>
+        </div>
+        <div id="paypalBtnWrap" style="margin-top:1.5rem;text-align:center">
+          <a id="paypalDirectLink" href="#" target="_blank" class="btn-paypal-checkout">
+            <i class="fa-brands fa-paypal"></i> متابعة الدفع عبر PayPal
+          </a>
+        </div>
+        <p style="color:var(--text-muted);font-size:0.8rem;text-align:center;margin-top:1.2rem">
+          🔒 دفع إلكتروني آمن ومحمي 100% عبر منصة PayPal
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. ORDER SUCCESS MODAL -->
+  <div id="orderSuccessModal" class="modal-overlay">
+    <div class="modal-card order-success-card">
+      <div class="success-icon-wrap">🎉</div>
+      <h2 class="success-title">تم استلام طلبك بنجاح!</h2>
+      <p class="success-msg">شكراً لثقتك بدار علي بن زيد للنشر. تم تسجيل طلبك وسيقوم فريقنا بالتواصل معك هاتفياً لتأكيد الشحن في أقرب وقت.</p>
+      <div class="success-details-box">
+        <div class="detail-line"><span>رقم الطلب:</span> <strong id="successOrderId" style="color:var(--gold)">#--</strong></div>
+        <div class="detail-line"><span>الكتاب:</span> <strong id="successBookTitle">--</strong></div>
+        <div class="detail-line"><span>الولاية:</span> <strong id="successWilaya">--</strong></div>
+        <div class="detail-line"><span>المبلغ المطلوب عند الاستلام:</span> <strong id="successTotal" style="color:var(--gold)">-- دج</strong></div>
+      </div>
+      <button type="button" id="btnOrderSuccessClose" class="btn-save" style="width:100%;margin-top:1.5rem">
+        العودة إلى تصفح الكتب 📚
+      </button>
+    </div>
+  </div>
 
   <!-- FLOATING ADMIN BUTTON -->
   <a href="./admin.html" class="admin-float" title="لوحة تحكم الأدمن">⚙️ لوحة التحكم</a>

@@ -10,6 +10,9 @@ import messagesRouter from "./messages.js";
 import contactRouter from "./contact.js";
 import settingsRouter from "./settings.js";
 import uploadRouter from "./upload.js";
+import ordersRouter from "./orders.js";
+import couponsRouter from "./coupons.js";
+import deliveryRouter from "./delivery.js";
 
 const router = Router();
 
@@ -24,5 +27,8 @@ router.use(messagesRouter);
 router.use(contactRouter);
 router.use(settingsRouter);
 router.use(uploadRouter);
+router.use(ordersRouter);
+router.use(couponsRouter);
+router.use(deliveryRouter);
 
 export default router;

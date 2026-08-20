@@ -1,4 +1,5 @@
 import { api } from './api-r.js';
+import { ALGERIA_WILAYAS } from './algeria_cities.js';
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let allBooks      = [];
@@ -122,6 +123,15 @@ function filterBooks() {
   renderBooks(filtered);
 }
 
+function resolveMediaUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  const apiBase = window.__API_BASE__ || 'https://daralibenzidweb.onrender.com';
+  return apiBase.replace(/\/+$/, '') + '/' + url.replace(/^\/+/, '');
+}
+
 function renderBooks(books) {
   const grid = document.getElementById('booksGrid');
   if (!grid) return;
@@ -132,15 +142,29 @@ function renderBooks(books) {
     return;
   }
   grid.innerHTML = visible.map(book => {
-    const color    = getCatColor(book);
-    const catName  = getCatName(book);
-    const coverHtml = book.cover_url
-      ? `<img src="${escHtml(book.cover_url)}" alt="${escHtml(book.title)}" class="book-cover-img">`
+    const color     = getCatColor(book);
+    const catName   = getCatName(book);
+    const coverPath = resolveMediaUrl(book.cover_url);
+    const coverHtml = coverPath
+      ? `<img src="${escHtml(coverPath)}" alt="${escHtml(book.title)}" class="book-cover-img" onerror="this.parentElement.classList.remove('has-image'); this.style.display='none';">`
       : `<span class="book-cover-icon">📖</span><div class="book-cover-lines"></div>`;
     const pdfBadge = book.pdf_url ? `<span class="pdf-badge">📄 PDF</span>` : '';
+
+    const price = Number(book.price) || 1200;
+    const discountPrice = book.discount_price ? Number(book.discount_price) : null;
+    const hasDiscount = discountPrice && discountPrice < price;
+
+    const priceHtml = hasDiscount
+      ? `<div class="book-price-tag">
+          <span class="price-current">${discountPrice} دج</span>
+          <span class="price-old">${price} دج</span>
+          <span class="price-discount-pill">خصم</span>
+        </div>`
+      : `<div class="book-price-tag"><span class="price-current">${price} دج</span></div>`;
+
     return `
     <article class="book-card fade-in">
-      <div class="book-cover ${book.cover_url ? 'has-image' : ''}" style="${book.cover_url ? '' : `background:linear-gradient(135deg,${color}dd 0%,${color}88 50%,${color}44 100%)`}">
+      <div class="book-cover ${coverPath ? 'has-image' : ''}" style="${coverPath ? '' : `background:linear-gradient(135deg,${color}dd 0%,${color}88 50%,${color}44 100%)`}">
         ${coverHtml}${pdfBadge}
       </div>
       <div class="book-info">
@@ -148,26 +172,29 @@ function renderBooks(books) {
         <h3 class="book-title">${escHtml(book.title)}</h3>
         <p class="book-author">✍️ ${escHtml(book.author)}</p>
         ${book.year ? `<p class="book-year">📅 ${book.year}</p>` : ''}
+        ${priceHtml}
         <div class="book-footer">
-          <button class="btn-detail" onclick="openBookModal(${book.id})">عرض التفاصيل</button>
+          <button class="btn-order-now" onclick="openOrderModal(${book.id})">🛍️ اطلب الآن</button>
+          <button class="btn-detail" onclick="openBookModal(${book.id})">تفاصيل</button>
         </div>
       </div>
     </article>`;
   }).join('');
 }
 
-// ─── BOOK MODAL ───────────────────────────────────────────────────────────────
+// ─── BOOK DETAILS MODAL ───────────────────────────────────────────────────────
 window.openBookModal = function(bookId) {
   const book = allBooks.find(b => b.id === bookId);
   if (!book) return;
 
-  const color   = getCatColor(book);
-  const catName = getCatName(book);
+  const color     = getCatColor(book);
+  const catName   = getCatName(book);
+  const coverPath = resolveMediaUrl(book.cover_url);
 
   const coverEl = document.getElementById('modalCover');
-  if (book.cover_url) {
+  if (coverPath) {
     coverEl.style.background = 'none';
-    coverEl.innerHTML = `<img src="${escHtml(book.cover_url)}" alt="${escHtml(book.title)}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+    coverEl.innerHTML = `<img src="${escHtml(coverPath)}" alt="${escHtml(book.title)}" style="width:100%;height:100%;object-fit:cover;display:block">`;
   } else {
     coverEl.style.background = `linear-gradient(135deg,${color}cc,${color}55)`;
     coverEl.innerHTML = `<span style="font-size:4rem;opacity:.7">📖</span>`;
@@ -180,32 +207,345 @@ window.openBookModal = function(bookId) {
     ${book.year  ? `<span>📅 ${book.year}</span>`           : ''}
     ${book.pages ? `<span>📄 ${book.pages} صفحة</span>`    : ''}
   `;
-  document.getElementById('modalDesc').textContent = book.description || 'لا يوجد وصف متاح.';
 
-  const existing = document.getElementById('modalPdfBtn');
-  if (existing) existing.remove();
-  if (book.pdf_url) {
-    const btn = document.createElement('a');
-    btn.id        = 'modalPdfBtn';
-    btn.href      = book.pdf_url;
-    btn.target    = '_blank';
-    btn.rel       = 'noopener noreferrer';
-    btn.className = 'btn-pdf-download';
-    btn.innerHTML = `<i class="fa-solid fa-file-pdf"></i> تحميل PDF`;
-    btn.addEventListener('click', e => e.stopPropagation());
-    document.getElementById('modalDesc').after(btn);
+  const price = Number(book.price) || 1200;
+  const discountPrice = book.discount_price ? Number(book.discount_price) : null;
+  const hasDiscount = discountPrice && discountPrice < price;
+
+  const pricingEl = document.getElementById('modalPricing');
+  if (pricingEl) {
+    pricingEl.innerHTML = hasDiscount
+      ? `<div class="modal-pricing-row">
+          <span class="modal-price-label">السعر الورقي:</span>
+          <span class="modal-price-curr">${discountPrice} دج</span>
+          <span class="modal-price-old">${price} دج</span>
+          <span class="modal-save-pill">توفير ${(price - discountPrice)} دج</span>
+        </div>`
+      : `<div class="modal-pricing-row">
+          <span class="modal-price-label">السعر الورقي:</span>
+          <span class="modal-price-curr">${price} دج</span>
+        </div>`;
+  }
+
+  document.getElementById('modalDesc').textContent = book.description || 'لا يوجد وصف متاح لهذا الإصدار.';
+
+  const actionsEl = document.getElementById('modalActions');
+  if (actionsEl) {
+    const pdfPrice = book.pdf_price ? Number(book.pdf_price) : 5.0;
+    actionsEl.innerHTML = `
+      <button class="btn-modal-order" onclick="openOrderModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
+        🛍️ اطلب نسختك الورقية الآن (الدفع عند الاستلام)
+      </button>
+      <button class="btn-modal-paypal" onclick="openPaypalModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
+        💳 شراء نسخة PDF فوراً ($${pdfPrice})
+      </button>
+    `;
   }
 
   document.getElementById('bookModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 };
 
+// ─── ORDER CHECKOUT MODAL LOGIC ───────────────────────────────────────────────
+let cachedDeliveryRates = [];
+let activeOrderBook = null;
+let orderQty = 1;
+let appliedDiscount = 0;
+let appliedCouponCode = '';
+
+async function loadDeliveryRates() {
+  if (cachedDeliveryRates.length) return cachedDeliveryRates;
+  try {
+    cachedDeliveryRates = await api.get('/api/delivery/rates');
+  } catch {
+    cachedDeliveryRates = [];
+  }
+  return cachedDeliveryRates;
+}
+
+window.openOrderModal = async function(bookId) {
+  const book = allBooks.find(b => b.id === bookId);
+  if (!book) return;
+
+  activeOrderBook = book;
+  orderQty = 1;
+  appliedDiscount = 0;
+  appliedCouponCode = '';
+
+  document.getElementById('orderBookId').value = book.id;
+  document.getElementById('orderBookTitle').textContent = book.title;
+  document.getElementById('orderBookAuthor').textContent = '✍️ ' + book.author;
+  document.getElementById('orderQtyInput').value = '1';
+
+  const price = Number(book.discount_price || book.price || 1200);
+  document.getElementById('orderBookPriceTag').textContent = `${price} دج / للنسخة`;
+
+  const coverPath = resolveMediaUrl(book.cover_url);
+  const coverEl = document.getElementById('orderBookCover');
+  if (coverPath) {
+    coverEl.innerHTML = `<img src="${escHtml(coverPath)}" alt="${escHtml(book.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+  } else {
+    const color = getCatColor(book);
+    coverEl.innerHTML = `<div style="width:100%;height:100%;background:${color};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.8rem">📖</div>`;
+  }
+
+  // Load Wilayas
+  const rates = await loadDeliveryRates();
+  const wilayaSelect = document.getElementById('orderWilayaSelect');
+  if (wilayaSelect) {
+    wilayaSelect.innerHTML = `<option value="">-- اختر ولايتك (58 ولاية) --</option>` +
+      rates.map(w => `<option value="${w.wilaya_code}" data-home="${w.home_price}" data-desk="${w.desk_price}">${w.wilaya_code}. ${escHtml(w.wilaya_name)}</option>`).join('');
+  }
+
+  // Reset commune select
+  const communeSelect = document.getElementById('orderCommuneSelect');
+  if (communeSelect) communeSelect.innerHTML = `<option value="">-- اختر الولاية أولاً --</option>`;
+  const customCommune = document.getElementById('orderCommuneCustom');
+  if (customCommune) { customCommune.value = ''; customCommune.style.display = 'none'; }
+
+  // Reset coupon state
+  document.getElementById('orderCouponInput').value = '';
+  document.getElementById('couponStatusMsg').innerHTML = '';
+  document.getElementById('calcDiscountRow').style.display = 'none';
+
+  updateOrderCalculation();
+
+  document.getElementById('orderModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+function onWilayaChanged() {
+  const wilayaSelect = document.getElementById('orderWilayaSelect');
+  const communeSelect = document.getElementById('orderCommuneSelect');
+  const customInput = document.getElementById('orderCommuneCustom');
+  const wilayaCode = Number(wilayaSelect?.value);
+
+  if (customInput) { customInput.value = ''; customInput.style.display = 'none'; }
+
+  if (!wilayaCode || !communeSelect) {
+    if (communeSelect) communeSelect.innerHTML = `<option value="">-- اختر الولاية أولاً --</option>`;
+    updateOrderCalculation();
+    return;
+  }
+
+  const wilayaData = ALGERIA_WILAYAS.find(w => w.code === wilayaCode);
+  const communes = wilayaData ? wilayaData.communes : [];
+
+  communeSelect.innerHTML = `<option value="">-- اختر البلدية (${communes.length} بلدية) --</option>` +
+    communes.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('') +
+    `<option value="__CUSTOM__">✍️ بلدية أخرى (كتابة يدوية)</option>`;
+
+  updateOrderCalculation();
+}
+
+function updateOrderCalculation() {
+  if (!activeOrderBook) return;
+
+  const unitPrice = Number(activeOrderBook.discount_price || activeOrderBook.price || 1200);
+  const subtotal = unitPrice * orderQty;
+
+  const wilayaSelect = document.getElementById('orderWilayaSelect');
+  const selectedOpt = wilayaSelect?.options[wilayaSelect.selectedIndex];
+
+  const homePrice = selectedOpt ? Number(selectedOpt.dataset.home || 600) : 600;
+  const deskPrice = selectedOpt ? Number(selectedOpt.dataset.desk || 400) : 400;
+
+  const homePriceEl = document.getElementById('homeDeliveryPrice');
+  const deskPriceEl = document.getElementById('deskDeliveryPrice');
+  if (homePriceEl) homePriceEl.textContent = `${homePrice} دج`;
+  if (deskPriceEl) deskPriceEl.textContent = `${deskPrice} دج`;
+
+  const deliveryType = document.querySelector('input[name="orderDeliveryType"]:checked')?.value || 'home';
+  const shippingFee = wilayaSelect?.value ? (deliveryType === 'desk' ? deskPrice : homePrice) : 0;
+
+  const total = Math.max(0, subtotal + shippingFee - appliedDiscount);
+
+  document.getElementById('calcQty').textContent = orderQty;
+  document.getElementById('calcSubtotal').textContent = `${subtotal} دج`;
+  document.getElementById('calcShipping').textContent = shippingFee > 0 ? `${shippingFee} دج` : 'اختر الولاية لحساب التوصيل';
+  document.getElementById('calcTotal').textContent = `${total} دج`;
+
+  if (appliedDiscount > 0) {
+    document.getElementById('calcDiscountRow').style.display = 'flex';
+    document.getElementById('calcDiscount').textContent = `-${appliedDiscount} دج`;
+  } else {
+    document.getElementById('calcDiscountRow').style.display = 'none';
+  }
+}
+
+// ─── PAYPAL DIGITAL PDF MODAL ─────────────────────────────────────────────────
+window.openPaypalModal = function(bookId) {
+  const book = allBooks.find(b => b.id === bookId);
+  if (!book) return;
+
+  const price = book.pdf_price ? Number(book.pdf_price) : 5.0;
+  document.getElementById('paypalBookTitle').textContent = book.title;
+  document.getElementById('paypalPriceVal').textContent = `$${price.toFixed(2)}`;
+
+  const directLink = document.getElementById('paypalDirectLink');
+  if (directLink) {
+    // Standard PayPal.Me or checkout link
+    directLink.href = `https://www.paypal.com/paypalme/daralibenzid/${price}`;
+  }
+
+  document.getElementById('paypalModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
 function initModal() {
-  const overlay  = document.getElementById('bookModal');
-  const closeBtn = document.getElementById('modalClose');
-  const close    = () => { overlay.classList.remove('open'); document.body.style.overflow = ''; };
-  closeBtn?.addEventListener('click', close);
-  overlay?.addEventListener('click', e => { if (e.target === overlay) close(); });
+  // Book Details Modal
+  const bookOverlay = document.getElementById('bookModal');
+  const bookClose   = document.getElementById('modalClose');
+  const closeBook   = () => { bookOverlay?.classList.remove('open'); document.body.style.overflow = ''; };
+  bookClose?.addEventListener('click', closeBook);
+  bookOverlay?.addEventListener('click', e => { if (e.target === bookOverlay) closeBook(); });
+
+  // Order Modal
+  const orderOverlay = document.getElementById('orderModal');
+  const orderClose   = document.getElementById('orderModalClose');
+  const closeOrder   = () => { orderOverlay?.classList.remove('open'); document.body.style.overflow = ''; };
+  orderClose?.addEventListener('click', closeOrder);
+  orderOverlay?.addEventListener('click', e => { if (e.target === orderOverlay) closeOrder(); });
+
+  // Paypal Modal
+  const paypalOverlay = document.getElementById('paypalModal');
+  const paypalClose   = document.getElementById('paypalModalClose');
+  const closePaypal   = () => { paypalOverlay?.classList.remove('open'); document.body.style.overflow = ''; };
+  paypalClose?.addEventListener('click', closePaypal);
+  paypalOverlay?.addEventListener('click', e => { if (e.target === paypalOverlay) closePaypal(); });
+
+  // Order Success Modal
+  const successOverlay = document.getElementById('orderSuccessModal');
+  const successClose   = document.getElementById('btnOrderSuccessClose');
+  const closeSuccess   = () => { successOverlay?.classList.remove('open'); document.body.style.overflow = ''; };
+  successClose?.addEventListener('click', closeSuccess);
+  successOverlay?.addEventListener('click', e => { if (e.target === successOverlay) closeSuccess(); });
+
+  // Quantity Stepper
+  document.getElementById('btnQtyMinus')?.addEventListener('click', () => {
+    if (orderQty > 1) {
+      orderQty--;
+      document.getElementById('orderQtyInput').value = orderQty;
+      updateOrderCalculation();
+    }
+  });
+
+  document.getElementById('btnQtyPlus')?.addEventListener('click', () => {
+    if (orderQty < 20) {
+      orderQty++;
+      document.getElementById('orderQtyInput').value = orderQty;
+      updateOrderCalculation();
+    }
+  });
+
+  // Wilaya and Delivery Type change listeners
+  document.getElementById('orderWilayaSelect')?.addEventListener('change', onWilayaChanged);
+
+  // Commune change listener
+  document.getElementById('orderCommuneSelect')?.addEventListener('change', e => {
+    const customInput = document.getElementById('orderCommuneCustom');
+    if (e.target.value === '__CUSTOM__') {
+      if (customInput) {
+        customInput.style.display = 'block';
+        customInput.focus();
+      }
+    } else {
+      if (customInput) customInput.style.display = 'none';
+    }
+  });
+
+  document.querySelectorAll('input[name="orderDeliveryType"]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('.delivery-opt').forEach(opt => opt.classList.remove('active'));
+      r.closest('.delivery-opt')?.classList.add('active');
+      updateOrderCalculation();
+    });
+  });
+
+  // Apply Coupon Button
+  document.getElementById('btnApplyCoupon')?.addEventListener('click', async () => {
+    const code = document.getElementById('orderCouponInput')?.value.trim();
+    const statusMsg = document.getElementById('couponStatusMsg');
+    if (!code) {
+      if (statusMsg) statusMsg.innerHTML = `<span style="color:var(--danger)">يرجى كتابة كود الخصم أولاً</span>`;
+      return;
+    }
+    const unitPrice = Number(activeOrderBook?.discount_price || activeOrderBook?.price || 1200);
+    const subtotal = unitPrice * orderQty;
+
+    if (statusMsg) statusMsg.innerHTML = `<span>جارٍ التحقق من الكود...</span>`;
+    try {
+      const res = await api.post('/api/coupons/validate', { code, subtotal });
+      if (res.valid) {
+        appliedDiscount = Number(res.discount_amount);
+        appliedCouponCode = res.code;
+        if (statusMsg) statusMsg.innerHTML = `<span style="color:var(--success)">✅ ${res.message}</span>`;
+        updateOrderCalculation();
+      } else {
+        appliedDiscount = 0;
+        appliedCouponCode = '';
+        if (statusMsg) statusMsg.innerHTML = `<span style="color:var(--danger)">❌ ${res.message || 'الكوبون غير صالح'}</span>`;
+        updateOrderCalculation();
+      }
+    } catch (err) {
+      appliedDiscount = 0;
+      appliedCouponCode = '';
+      if (statusMsg) statusMsg.innerHTML = `<span style="color:var(--danger)">❌ ${err.message || 'كود الخصم غير صحيح'}</span>`;
+      updateOrderCalculation();
+    }
+  });
+
+  // Order Form Submit
+  document.getElementById('orderForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name    = document.getElementById('orderCustomerName')?.value.trim();
+    const phone   = document.getElementById('orderCustomerPhone')?.value.trim();
+    const wilaya  = document.getElementById('orderWilayaSelect')?.value;
+    const communeSelectVal = document.getElementById('orderCommuneSelect')?.value;
+    const communeCustomVal = document.getElementById('orderCommuneCustom')?.value.trim();
+    const commune = (communeSelectVal === '__CUSTOM__' ? communeCustomVal : communeSelectVal) || '';
+    const address = document.getElementById('orderAddress')?.value.trim();
+    const deliveryType = document.querySelector('input[name="orderDeliveryType"]:checked')?.value || 'home';
+
+    if (!name || !phone || !wilaya || !commune || !address) {
+      alert('يرجى ملء جميع الحقول المطلوبة (الاسم، الهاتف، الولاية، البلدية، والعنوان)');
+      return;
+    }
+
+    const submitBtn = document.getElementById('btnSubmitOrder');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'جارٍ تسجيل طلبك...'; }
+
+    try {
+      const payload = {
+        book_id: activeOrderBook.id,
+        customer_name: name,
+        customer_phone: phone,
+        wilaya_code: Number(wilaya),
+        commune,
+        address,
+        delivery_type: deliveryType,
+        quantity: orderQty,
+        coupon_code: appliedCouponCode || null,
+        payment_method: 'cod'
+      };
+
+      const result = await api.post('/api/orders', payload);
+      closeOrder();
+
+      // Populate & open success modal
+      document.getElementById('successOrderId').textContent = `#${result.order?.id || 'OK'}`;
+      document.getElementById('successBookTitle').textContent = activeOrderBook.title;
+      document.getElementById('successWilaya').textContent = result.order?.wilaya_name || `ولاية ${wilaya}`;
+      document.getElementById('successTotal').textContent = `${result.order?.total_price || 0} دج`;
+
+      document.getElementById('orderSuccessModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    } catch (err) {
+      alert('تعذّر إرسال الطلب: ' + (err.message || 'يرجى المحاولة مرة أخرى'));
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '🛍️ تأكيد الطلب والدفع عند الاستلام'; }
+    }
+  });
 }
 
 // ─── ABOUT ────────────────────────────────────────────────────────────────────
