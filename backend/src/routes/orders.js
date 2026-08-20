@@ -107,6 +107,9 @@ router.post("/orders", async (req, res) => {
 
     const rateRows = await query("SELECT * FROM delivery_rates WHERE wilaya_code = ?", [Number(wilaya_code)]);
     if (rateRows[0]) {
+      if (Number(rateRows[0].is_available) === 0) {
+        return res.status(400).json({ error: "عذراً، التوصيل غير متاح حالياً للولاية المختارة" });
+      }
       resolvedWilayaName = rateRows[0].wilaya_name;
       deliveryPrice = delivery_type === "desk"
         ? Number(rateRows[0].desk_price || 400.0)

@@ -1477,8 +1477,8 @@ async function renderDeliverySection() {
         <input type="number" id="deskPrice_${w.wilaya_code}" value="${w.desk_price}" class="form-input" style="width:110px;padding:0.4rem 0.6rem" step="10" />
       </td>
       <td>
-        <label class="toggle-switch">
-          <input type="checkbox" id="avail_${w.wilaya_code}" ${w.is_available ? 'checked' : ''} />
+        <label class="toggle-switch" title="تفعيل أو إيقاف التوصيل لهذه الولاية">
+          <input type="checkbox" id="avail_${w.wilaya_code}" ${Number(w.is_available) === 1 ? 'checked' : ''} onchange="saveWilayaRate(${w.wilaya_code})" />
           <span class="toggle-slider"></span>
         </label>
       </td>
@@ -1500,9 +1500,13 @@ window.saveWilayaRate = async function(wilayaCode) {
       desk_price: Number(deskPrice),
       is_available: isAvailable ? 1 : 0
     });
-    toast(`تم تحديث سعر ولاية (${wilayaCode}) بنجاح`);
+    if (isAvailable) {
+      toast(`✅ تم تفعيل التوصيل لولاية (${wilayaCode}) وستظهر للزبائن`);
+    } else {
+      toast(`⛔ تم إيقاف التوصيل لولاية (${wilayaCode}) وتم إخفاؤها من الموقع`);
+    }
   } catch (err) {
-    toast('تعذّر تحديث السعر: ' + (err.message || ''), 'error');
+    toast('تعذّر تحديث السعر والحالة: ' + (err.message || ''), 'error');
   }
 };
 

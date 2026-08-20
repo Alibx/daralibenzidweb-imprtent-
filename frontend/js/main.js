@@ -253,8 +253,8 @@ let orderQty = 1;
 let appliedDiscount = 0;
 let appliedCouponCode = '';
 
-async function loadDeliveryRates() {
-  if (cachedDeliveryRates.length) return cachedDeliveryRates;
+async function loadDeliveryRates(forceRefresh = false) {
+  if (!forceRefresh && cachedDeliveryRates.length) return cachedDeliveryRates;
   try {
     cachedDeliveryRates = await api.get('/api/delivery/rates');
   } catch {
@@ -289,12 +289,17 @@ window.openOrderModal = async function(bookId) {
     coverEl.innerHTML = `<div style="width:100%;height:100%;background:${color};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.8rem">📖</div>`;
   }
 
-  // Load Wilayas
-  const rates = await loadDeliveryRates();
+  // Load Wilayas (Only available ones)
+  const rates = await loadDeliveryRates(true);
+  const availableRates = rates.filter(w => Number(w.is_available) === 1);
   const wilayaSelect = document.getElementById('orderWilayaSelect');
   if (wilayaSelect) {
-    wilayaSelect.innerHTML = `<option value="">-- اختر ولايتك (58 ولاية) --</option>` +
-      rates.map(w => `<option value="${w.wilaya_code}" data-home="${w.home_price}" data-desk="${w.desk_price}">${w.wilaya_code}. ${escHtml(w.wilaya_name)}</option>`).join('');
+    if (availableRates.length === 0) {
+      wilayaSelect.innerHTML = `<option value="">-- عذراً، التوصيل غير متاح حالياً --</option>`;
+    } else {
+      wilayaSelect.innerHTML = `<option value="">-- اختر ولايتك (${availableRates.length} ولاية متاحة) --</option>` +
+        availableRates.map(w => `<option value="${w.wilaya_code}" data-home="${w.home_price}" data-desk="${w.desk_price}">${w.wilaya_code}. ${escHtml(w.wilaya_name)}</option>`).join('');
+    }
   }
 
   // Reset commune select
