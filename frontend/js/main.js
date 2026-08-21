@@ -938,44 +938,47 @@ function showLoading(show) {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  initNavbar();
-  initCart();
-  initModalsAndOrder();
-  initReviews();
-  initManuscriptSection();
-  initContactForm();
-  initScrollAnimations();
+  try { initNavbar(); } catch (e) { console.error('initNavbar error', e); }
+  try { initCart(); } catch (e) { console.error('initCart error', e); }
+  try { initModalsAndOrder(); } catch (e) { console.error('initModalsAndOrder error', e); }
+  try { initManuscriptSection(); } catch (e) { console.error('initManuscriptSection error', e); }
+  try { initContactForm(); } catch (e) { console.error('initContactForm error', e); }
+  try { initScrollAnimations(); } catch (e) { console.error('initScrollAnimations error', e); }
 
   showLoading(true);
 
   const safe = p => p.catch(() => null);
 
-  const [books, cats, about, milestones, testimonials, contact, settings] = await Promise.all([
-    safe(api.get('/api/books')),
-    safe(api.get('/api/categories')),
-    safe(api.get('/api/about')),
-    safe(api.get('/api/milestones')),
-    safe(api.get('/api/testimonials')),
-    safe(api.get('/api/contact')),
-    safe(api.get('/api/settings')),
-  ]);
+  try {
+    const [books, cats, about, milestones, testimonials, contact, settings] = await Promise.all([
+      safe(api.get('/api/books')),
+      safe(api.get('/api/categories')),
+      safe(api.get('/api/about')),
+      safe(api.get('/api/milestones')),
+      safe(api.get('/api/testimonials')),
+      safe(api.get('/api/contact')),
+      safe(api.get('/api/settings')),
+    ]);
 
-  showLoading(false);
+    allBooks      = Array.isArray(books)        ? books        : [];
+    allCategories = Array.isArray(cats)         ? cats         : [];
+    const aboutData    = about    && typeof about    === 'object' ? about    : {};
+    const mils         = Array.isArray(milestones)   ? milestones   : [];
+    const tests        = Array.isArray(testimonials) ? testimonials : [];
+    const contactData  = contact  && typeof contact  === 'object' ? contact  : {};
+    const settingsData = settings && typeof settings === 'object' ? settings : {};
 
-  allBooks      = Array.isArray(books)        ? books        : [];
-  allCategories = Array.isArray(cats)         ? cats         : [];
-  const aboutData    = about    && typeof about    === 'object' ? about    : {};
-  const mils         = Array.isArray(milestones)   ? milestones   : [];
-  const tests        = Array.isArray(testimonials) ? testimonials : [];
-  const contactData  = contact  && typeof contact  === 'object' ? contact  : {};
-  const settingsData = settings && typeof settings === 'object' ? settings : {};
-
-  renderHero(settingsData);
-  renderStats(settingsData);
-  renderFilterTabs(allCategories);
-  renderBooks(allBooks);
-  renderAbout(aboutData, mils);
-  renderTestimonials(tests);
-  renderContact(contactData);
-  renderFooter(settingsData);
+    renderHero(settingsData);
+    renderStats(settingsData);
+    renderFilterTabs(allCategories);
+    renderBooks(allBooks);
+    renderAbout(aboutData, mils);
+    renderTestimonials(tests);
+    renderContact(contactData);
+    renderFooter(settingsData);
+  } catch (err) {
+    console.error('Data load error:', err);
+  } finally {
+    showLoading(false);
+  }
 });
