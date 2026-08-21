@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>طلب كتاب — دار علي بن زيد للطباعة والنشر</title>
+  <meta name="description" content="اطلب نسختك الورقية الأصلية مع خدمة التوصيل السريع والدفع عند الاستلام لجميع ولايات الجزائر." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
+  <style>
+    /* ─── DEDICATED BOOK ORDER PAGE STYLES ─── */
+    .book-page-wrap {
+      min-height: 100vh;
+      background: var(--navy);
+      color: var(--text-light);
+      padding: 1.5rem 1rem 4rem;
+    }
+    .book-page-nav {
+      max-width: 1200px;
+      margin: 0 auto 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.8rem 1.2rem;
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .book-page-nav .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+    .book-page-nav .back-link:hover {
+      transform: translateX(4px);
+      color: var(--gold-light);
+    }
+    .book-page-nav .logo-txt {
+      font-family: 'Amiri', serif;
+      font-size: 1.3rem;
+      color: #fff;
+    }
+
+    .book-page-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 2rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .book-page-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left / Sticky Order Card */
+    .book-order-form-card {
+      background: var(--navy-mid);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 1.8rem;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+      position: sticky;
+      top: 1.5rem;
+    }
+    .order-card-badge {
+      display: inline-block;
+      background: rgba(201,168,76,0.15);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 0.25rem 0.8rem;
+      border-radius: 50px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .order-card-title {
+      font-family: 'Amiri', serif;
+      font-size: 1.6rem;
+      color: var(--text-light);
+      margin: 0 0 0.4rem;
+    }
+    .order-card-subtitle {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-bottom: 1.2rem;
+      line-height: 1.5;
+    }
+
+    /* Right Book Details Card */
+    .book-info-card {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+    }
+    .book-showcase {
+      display: flex;
+      gap: 1.8rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .book-cover-large {
+      width: 220px;
+      height: 310px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+      flex-shrink: 0;
+      background: #111e2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .book-cover-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .book-header-info {
+      flex: 1;
+      min-width: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .book-page-cat {
+      display: inline-block;
+      background: rgba(201,168,76,0.15);
+      color: var(--gold);
+      padding: 0.25rem 0.8rem;
+      border-radius: 50px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      align-self: flex-start;
+      border: 1px solid rgba(201,168,76,0.3);
+    }
+    .book-page-title {
+      font-family: 'Amiri', serif;
+      font-size: 2rem;
+      color: #fff;
+      margin: 0 0 0.5rem;
+      line-height: 1.25;
+    }
+    .book-page-author {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .book-price-tag-lg {
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+      background: rgba(0,0,0,0.25);
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      border: 1px dashed rgba(201,168,76,0.4);
+      margin-bottom: 1rem;
+    }
+    .price-lg-curr {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--gold);
+    }
+    .price-lg-old {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+    .price-lg-discount {
+      background: #e74c3c;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .book-meta-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .book-meta-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text-light);
+    }
+
+    .book-desc-section {
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      margin-top: 1rem;
+    }
+    .book-desc-section h3 {
+      color: var(--gold);
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+    .book-desc-text {
+      color: var(--text-light);
+      line-height: 1.8;
+      font-size: 0.95rem;
+      white-space: pre-line;
+    }
+
+    .guarantees-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 1.5rem;
+      padding-top: 1.2rem;
+      border-top: 1px solid var(--border);
+    }
+    .guarantee-box {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .guarantee-box span.icon {
+      font-size: 1.2rem;
+    }
+
+    /* Stepper & Form controls */
+    .form-stepper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .btn-step {
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid var(--border);
+      color: #fff;
+      border-radius: 6px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+    .btn-step:hover {
+      background: var(--gold);
+      color: var(--navy);
+      border-color: var(--gold);
+    }
+    .step-input {
+      width: 55px;
+      height: 36px;
+      text-align: center;
+      background: var(--navy);
+      border: 1.5px solid var(--border);
+      color: var(--gold);
+      font-weight: bold;
+      font-size: 1.1rem;
+      border-radius: 6px;
+    }
+
+    .delivery-options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-bottom: 1.2rem;
+    }
+    .del-opt-card {
+      border: 1.5px solid var(--border);
+      background: var(--navy);
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .del-opt-card.active {
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.08);
+    }
+    .del-opt-card input {
+      display: none;
+    }
+    .del-opt-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .del-opt-price {
+      font-size: 0.82rem;
+      color: var(--gold);
+      font-weight: bold;
+    }
+
+    .order-calc-table {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      margin-bottom: 1.2rem;
+      font-size: 0.9rem;
+    }
+    .calc-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.35rem 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.06);
+    }
+    .calc-row:last-child {
+      border-bottom: none;
+    }
+    .calc-row.total-row {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: var(--gold);
+      padding-top: 0.6rem;
+      border-top: 1px solid rgba(201,168,76,0.3);
+    }
+
+    .btn-submit-order-big {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--navy);
+      border: none;
+      border-radius: 10px;
+      font-size: 1.15rem;
+      font-weight: 900;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      box-shadow: 0 6px 20px rgba(201,168,76,0.35);
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-submit-order-big:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(201,168,76,0.5);
+    }
+    .btn-add-cart-secondary {
+      width: 100%;
+      padding: 0.75rem;
+      background: transparent;
+      border: 1.5px solid var(--gold);
+      color: var(--gold);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Cairo', sans-serif;
+      margin-top: 0.6rem;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-add-cart-secondary:hover {
+      background: rgba(201,168,76,0.15);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <div class="book-page-wrap">
+    <!-- NAVIGATION BAR -->
+    <header class="book-page-nav">
+      <a href="./index.html#publications" class="back-link">
+        <span>← العودة لقائمة الكتب</span>
+      </a>
+      <div class="logo-txt">دار علي بن زيد للطباعة والنشر</div>
+      <button id="navCartBtn" class="nav-cart-btn" aria-label="سلة التسوق" title="عرض سلة الكتب">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-label">السلة</span>
+        <span id="cartBadge" class="cart-badge">0</span>
+      </button>
+    </header>
+
+    <div class="book-page-container">
+      <!-- ═══ RIGHT COLUMN: BOOK PRESENTATION & REVIEWS ═══ -->
+      <section class="book-info-card">
+        <div class="book-showcase">
+          <div id="bookCoverLarge" class="book-cover-large">
+            <span style="font-size:4rem;opacity:.5">📖</span>
+          </div>
+          <div class="book-header-info">
+            <span id="bookCategoryBadge" class="book-page-cat">جاري التحميل...</span>
+            <h1 id="bookPageTitle" class="book-page-title">عنوان الكتاب</h1>
+            <p id="bookPageAuthor" class="book-page-author">✍️ اسم الكاتب / المؤلف</p>
+            
+            <div class="book-price-tag-lg">
+              <span id="bookPriceCurr" class="price-lg-curr">0 دج</span>
+              <span id="bookPriceOld" class="price-lg-old" style="display:none">0 دج</span>
+              <span id="bookPriceDiscount" class="price-lg-discount" style="display:none">خصم</span>
+            </div>
+
+            <div class="book-meta-pills" id="bookMetaPills">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Book Description -->
+        <div class="book-desc-section">
+          <h3>📖 نبذة عن الكتاب والعمل:</h3>
+          <p id="bookPageDesc" class="book-desc-text">جارٍ تحميل وصف وتفاصيل الكتاب...</p>
+        </div>
+
+        <!-- Guarantees -->
+        <div class="guarantees-grid">
+          <div class="guarantee-box">
+            <span class="icon">🚚</span>
+            <span>توصيل سريع لجميع الـ 58 ولاية</span>
+          </div>
+          <div class="guarantee-box">
+            <span class="icon">💵</span>
+            <span>الدفع عند الاستلام والمعاينة</span>
+          </div>
+          <div class="guarantee-box">
+            <span class="icon">📚</span>
+            <span>طبعة أصلية وجودة ورق فاخرة</span>
+          </div>
+          <div class="guarantee-box">
+            <span class="icon">🤝</span>
+            <span>خدمة زبائن ومتابعة على واتساب</span>
+          </div>
+        </div>
+
+        <!-- Digital PDF Option if available -->
+        <div id="pdfPurchaseBox" style="display:none;margin-top:1.5rem;background:rgba(0,112,186,0.12);border:1px solid #0070ba;border-radius:10px;padding:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
+          <div>
+            <div style="font-weight:bold;color:#fff">📄 هل تفضل القراءة الإلكترونية الفورية؟</div>
+            <div style="font-size:0.82rem;color:var(--text-muted)">نسخة PDF رقمية عالية الجودة للتحميل الفوري بعد الدفع</div>
+          </div>
+          <button id="btnBuyPdf" class="btn-save" style="background:#0070ba;border-color:#0070ba;padding:0.5rem 1.2rem">💳 شراء PDF ($<span id="pdfPriceVal">5.0</span>)</button>
+        </div>
+
+        <!-- Customer Reviews & Ratings -->
+        <div class="book-reviews-section" style="margin-top:2rem">
+          <div class="reviews-header">
+            <h3 class="reviews-title">⭐ آراء ومراجعات القراء</h3>
+            <div id="bookRatingSummary" class="rating-summary-pill">
+              <span id="ratingAvgNum" class="rating-num">5.0</span>
+              <span id="ratingAvgStars" class="rating-stars">★★★★★</span>
+              <span id="ratingCountText" class="rating-count">(0 مراجعات)</span>
+            </div>
+          </div>
+
+          <div id="bookReviewsList" class="reviews-list">
+            <div class="empty-reviews">جارٍ تحميل المراجعات...</div>
+          </div>
+
+          <!-- Add Review Form -->
+          <form id="addReviewForm" class="add-review-form">
+            <h4 class="form-title">✍️ أضف رأيك وتقييمك في هذا الكتاب</h4>
+            <div class="star-picker-wrap">
+              <span class="star-label">تقييمك:</span>
+              <div class="stars-select" id="starIcons">
+                <span class="star-btn" data-val="1">★</span>
+                <span class="star-btn" data-val="2">★</span>
+                <span class="star-btn" data-val="3">★</span>
+                <span class="star-btn" data-val="4">★</span>
+                <span class="star-btn active" data-val="5">★</span>
+              </div>
+              <input type="hidden" id="reviewRatingInput" value="5" />
+            </div>
+            <div class="form-group" style="margin-bottom:0.6rem">
+              <input type="text" id="reviewNameInput" class="form-input" placeholder="اسمك الكريم *" required />
+            </div>
+            <div class="form-group" style="margin-bottom:0.6rem">
+              <textarea id="reviewCommentInput" class="form-input" placeholder="اكتب رأيك أو مراجعتك حول الكتاب..." rows="2"></textarea>
+            </div>
+            <button type="submit" id="btnSubmitReview" class="btn-submit-review">إرسال التقييم ✨</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ═══ LEFT COLUMN: DIRECT ORDER FORM (COD) ═══ -->
+      <aside class="book-order-form-card">
+        <span class="order-card-badge">🛍️ طلب شراء فوري</span>
+        <h2 class="order-card-title">استمارة الطلب والتوصيل</h2>
+        <p class="order-card-subtitle">ادفع عند استلام الطرد بعد معاينته من طرف موزع التوصيل</p>
+
+        <form id="bookOrderForm" novalidate>
+          <!-- Quantity Stepper -->
+          <div style="margin-bottom:1rem">
+            <label class="form-label" style="margin-bottom:0.3rem">الكمية المطلوبة (عدد النسخ):</label>
+            <div class="form-stepper">
+              <button type="button" class="btn-step" id="btnQtyMinus">-</button>
+              <input type="number" id="orderQtyInput" class="step-input" value="1" min="1" max="20" readonly />
+              <button type="button" class="btn-step" id="btnQtyPlus">+</button>
+              <span style="font-size:0.85rem;color:var(--text-muted);margin-right:0.5rem">نسخة ورقية</span>
+            </div>
+          </div>
+
+          <!-- Customer Name -->
+          <div class="form-group">
+            <label class="form-label">الاسم الكامل <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="orderCustomerName" class="form-input" placeholder="اكتب اسمك ولقبك" required />
+          </div>
+
+          <!-- Customer Phone -->
+          <div class="form-group">
+            <label class="form-label">رقم الهاتف (للاتصال والتأكيد) <span style="color:var(--danger)">*</span></label>
+            <input type="tel" id="orderCustomerPhone" class="form-input" placeholder="مثال: 0770 00 00 00" required />
+          </div>
+
+          <!-- Wilaya & Commune -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
+            <div>
+              <label class="form-label">الولاية (58 ولاية) <span style="color:var(--danger)">*</span></label>
+              <select id="orderWilayaSelect" class="form-select" required>
+                <option value="">-- اختر ولايتك --</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">البلدية <span style="color:var(--danger)">*</span></label>
+              <select id="orderCommuneSelect" class="form-select" required>
+                <option value="">-- اختر الولاية أولاً --</option>
+              </select>
+            </div>
+          </div>
+          <input type="text" id="orderCommuneCustom" class="form-input" placeholder="اكتب اسم بلديتك هنا..." style="display:none;margin-bottom:1rem" />
+
+          <!-- Address -->
+          <div class="form-group">
+            <label class="form-label">العنوان بالتفصيل (الحي / الشارع / المعلم) <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="orderAddress" class="form-input" placeholder="مثال: حي النور، عمارة 5، قرب مسجد..." required />
+          </div>
+
+          <!-- Delivery Type Options -->
+          <div style="margin-bottom:1rem">
+            <label class="form-label" style="margin-bottom:0.4rem">نوع التوصيل المطلوب:</label>
+            <div class="delivery-options-grid">
+              <label class="del-opt-card active" id="labelDelHome">
+                <input type="radio" name="orderDeliveryType" value="home" checked />
+                <div class="del-opt-title">
+                  <span>🏠 توصيل للمنزل</span>
+                </div>
+                <div class="del-opt-price" id="homeDeliveryPrice">-- دج</div>
+              </label>
+              <label class="del-opt-card" id="labelDelDesk">
+                <input type="radio" name="orderDeliveryType" value="desk" />
+                <div class="del-opt-title">
+                  <span>🏢 استلام من المكتب</span>
+                </div>
+                <div class="del-opt-price" id="deskDeliveryPrice">-- دج</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Coupon Code -->
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">كود الخصم (إن وجد)</label>
+            <div style="display:flex;gap:0.4rem">
+              <input type="text" id="orderCouponInput" class="form-input" placeholder="رمز الكوبون..." style="text-transform:uppercase;flex:1" />
+              <button type="button" id="btnApplyCoupon" class="btn-save" style="padding:0.6rem 1rem;white-space:nowrap">تطبيق</button>
+            </div>
+            <div id="couponStatusMsg" style="font-size:0.8rem;margin-top:0.3rem"></div>
+          </div>
+
+          <!-- Real-Time Calculation -->
+          <div class="order-calc-table">
+            <div class="calc-row">
+              <span id="calcBookPriceLabel">سعر الكتاب (×1):</span>
+              <strong id="calcBookPrice">0 دج</strong>
+            </div>
+            <div class="calc-row">
+              <span>تكلفة التوصيل:</span>
+              <strong id="calcDeliveryPrice">اختر الولاية</strong>
+            </div>
+            <div class="calc-row" id="calcDiscountRow" style="display:none;color:var(--success)">
+              <span>قيمة الخصم:</span>
+              <strong id="calcDiscount">-0 دج</strong>
+            </div>
+            <div class="calc-row total-row">
+              <span>المبلغ الإجمالي للدفع:</span>
+              <strong id="calcTotal">0 دج</strong>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="form-group" style="margin-bottom:1.2rem">
+            <input type="text" id="orderNotes" class="form-input" placeholder="ملاحظات إضافية للتوصيل (اختياري)..." />
+          </div>
+
+          <!-- Submit CTA -->
+          <button type="submit" id="btnSubmitOrder" class="btn-submit-order-big">
+            <span>🛍️ اضغط هنا لتأكيد طلبك (الدفع عند الاستلام)</span>
+          </button>
+
+          <!-- Add to Cart Secondary -->
+          <button type="button" id="btnAddToCart" class="btn-add-cart-secondary">
+            <span>🛒 إضافة هذا الكتاب إلى سلة المشتريات</span>
+          </button>
+
+          <!-- WhatsApp Direct Order -->
+          <a id="btnOrderWaDirect" href="#" target="_blank" rel="noopener" class="btn-outline" style="width:100%;margin-top:0.6rem;display:flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.6rem;text-decoration:none;border-color:#25D366;color:#25D366">
+            <span>💬 أو اطلب مباشرة عبر واتساب</span>
+          </a>
+        </form>
+      </aside>
+    </div>
+  </div>
+
+  <!-- SHOPPING CART DRAWER -->
+  <div id="cartDrawerOverlay" class="drawer-overlay"></div>
+  <aside id="cartDrawer" class="cart-drawer" aria-label="سلة المشتريات">
+    <div class="cart-drawer-header">
+      <div class="cart-header-title">
+        <span style="font-size:1.25rem">🛒 سلة المشتريات</span>
+        <span id="cartDrawerCountBadge" class="cart-drawer-badge">0 كتب</span>
+      </div>
+      <button id="cartDrawerClose" class="drawer-close" aria-label="إغلاق">✕</button>
+    </div>
+    <div id="cartDrawerBody" class="cart-drawer-body"></div>
+    <div id="cartDrawerFooter" class="cart-drawer-footer">
+      <div class="cart-summary-row">
+        <span class="cart-subtotal-label">مجموع الكتب:</span>
+        <strong id="cartSubtotalVal" class="cart-subtotal-val">0 دج</strong>
+      </div>
+      <button id="btnCartCheckout" class="btn-primary" style="width:100%;padding:0.9rem;font-size:1.05rem;font-weight:700">
+        🛍️ إتمام الطلب والدفع عند الاستلام
+      </button>
+    </div>
+  </aside>
+
+  <!-- ORDER SUCCESS MODAL -->
+  <div id="orderSuccessModal" class="modal-overlay">
+    <div class="modal-card order-success-card">
+      <div class="success-icon-wrap">🎉</div>
+      <h2 class="success-title">تم استلام طلبك بنجاح!</h2>
+      <p class="success-msg">شكراً لثقتكم بدار علي بن زيد للنشر. سنتصل بكم هاتفياً لتأكيد الشحن وإرسال الطرد.</p>
+      <div class="success-details-box">
+        <div class="detail-line">
+          <span>رقم الطلب:</span>
+          <strong id="successOrderId" style="color:var(--gold)">#--</strong>
+        </div>
+        <div class="detail-line">
+          <span>عنوان الكتاب:</span>
+          <strong id="successBookTitle">--</strong>
+        </div>
+        <div class="detail-line">
+          <span>الولاية:</span>
+          <strong id="successWilaya">--</strong>
+        </div>
+        <div class="detail-line">
+          <span>المبلغ الإجمالي (عند الاستلام):</span>
+          <strong id="successTotal" style="color:var(--gold)">-- دج</strong>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.8rem;margin-top:1.2rem">
+        <a href="./index.html" class="btn-save" style="flex:1;text-decoration:none;text-align:center;padding:0.8rem">← تصفح المزيد من الكتب</a>
+        <button id="btnOrderSuccessClose" class="btn-cancel" style="padding:0.8rem 1.2rem">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./js/book.js?v=2"></script>
+</body>
+</html>

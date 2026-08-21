@@ -480,64 +480,7 @@
     </div>
   </footer>
 
-  <!-- ═══ MODALS ═══ -->
-
-  <!-- 1. BOOK DETAILS MODAL (with Reviews & Rating) -->
-  <div id="bookModal" class="modal-overlay">
-    <div class="modal-card">
-      <button id="modalClose" class="modal-close-btn" aria-label="إغلاق">✕</button>
-      <div class="modal-grid">
-        <div id="modalCover" class="modal-cover"></div>
-        <div class="modal-body">
-          <h2 id="modalTitle" class="modal-title"></h2>
-          <div id="modalMeta" class="modal-meta"></div>
-          <div id="modalPricing" class="modal-pricing-box"></div>
-          <p id="modalDesc" class="modal-desc"></p>
-          <div class="modal-actions" id="modalActions"></div>
-
-          <!-- BOOK REVIEWS & RATINGS SECTION -->
-          <div class="book-reviews-section">
-            <div class="reviews-header">
-              <h3 class="reviews-title">⭐ آراء وتقييمات القراء</h3>
-              <div id="bookRatingSummary" class="rating-summary-pill">
-                <span id="ratingAvgNum" class="rating-num">5.0</span>
-                <span id="ratingAvgStars" class="rating-stars">⭐⭐⭐⭐⭐</span>
-                <span id="ratingCountText" class="rating-count">(0 مراجعات)</span>
-              </div>
-            </div>
-
-            <!-- List of Reviews -->
-            <div id="bookReviewsList" class="reviews-list">
-              <div class="empty-reviews">لا توجد مراجعات بعد. كن أول من يكتب مراجعة لهذا الكتاب!</div>
-            </div>
-
-            <!-- Add Review Form -->
-            <form id="addReviewForm" class="add-review-form">
-              <h4 class="form-title">✍️ أضف رأيك وتقييمك في هذا الكتاب</h4>
-              <div class="star-picker-wrap">
-                <span class="star-label">تقييمك:</span>
-                <div class="stars-select" id="starIcons">
-                  <span class="star-btn" data-val="1">★</span>
-                  <span class="star-btn" data-val="2">★</span>
-                  <span class="star-btn" data-val="3">★</span>
-                  <span class="star-btn" data-val="4">★</span>
-                  <span class="star-btn active" data-val="5">★</span>
-                </div>
-                <input type="hidden" id="reviewRatingInput" value="5" />
-              </div>
-              <div class="form-group" style="margin-bottom:0.6rem">
-                <input type="text" id="reviewNameInput" class="form-input" placeholder="اسمك الكريم *" required />
-              </div>
-              <div class="form-group" style="margin-bottom:0.6rem">
-                <textarea id="reviewCommentInput" class="form-input" placeholder="اكتب رأيك أو مراجعتك حول الكتاب..." rows="2"></textarea>
-              </div>
-              <button type="submit" id="btnSubmitReview" class="btn-submit-review">إرسال التقييم ✨</button>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- ═══ MODALS & DRAWERS ═══ -->
 
   <!-- 2. SHOPPING CART DRAWER -->
   <div id="cartDrawerOverlay" class="drawer-overlay"></div>

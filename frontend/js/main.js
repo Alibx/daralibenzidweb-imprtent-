@@ -315,7 +315,7 @@ function renderBooks(books) {
       : `<div class="book-price-tag"><span class="price-current">${price} دج</span></div>`;
 
     return `
-    <article class="book-card fade-in" style="cursor:pointer" onclick="openBookModal(${book.id})">
+    <article class="book-card fade-in" style="cursor:pointer" onclick="window.location.href='./book.html?id=${book.id}'">
       <div class="book-cover ${coverPath ? 'has-image' : ''}" style="${coverPath ? '' : `background:linear-gradient(135deg,${color}dd 0%,${color}88 50%,${color}44 100%)`}">
         ${coverHtml}${pdfBadge}
       </div>
@@ -326,186 +326,21 @@ function renderBooks(books) {
         ${book.year ? `<p class="book-year">📅 ${book.year}</p>` : ''}
         ${priceHtml}
         <div class="book-footer" style="margin-top:0.8rem">
-          <button class="btn-order-now" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.7rem 1rem" onclick="event.stopPropagation(); openBookModal(${book.id})">
-            <span>📖 تفاصيل الكتاب والطلب</span>
-          </button>
+          <a href="./book.html?id=${book.id}" class="btn-order-now" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.75rem 1rem;text-decoration:none">
+            <span>📖 تفاصيل الكتاب والطلب الفوري</span>
+          </a>
         </div>
       </div>
     </article>`;
   }).join('');
 }
 
-// ─── BOOK DETAILS MODAL & REVIEWS ─────────────────────────────────────────────
-let activeModalBookId = null;
-
-window.openBookModal = async function(bookId) {
-  const book = allBooks.find(b => b.id === bookId);
-  if (!book) return;
-
-  activeModalBookId = book.id;
-  const color     = getCatColor(book);
-  const catName   = getCatName(book);
-  const coverPath = resolveMediaUrl(book.cover_url);
-
-  const coverEl = document.getElementById('modalCover');
-  if (coverPath) {
-    coverEl.style.background = 'none';
-    coverEl.innerHTML = `<img src="${escHtml(coverPath)}" alt="${escHtml(book.title)}" style="width:100%;height:100%;object-fit:cover;display:block">`;
-  } else {
-    coverEl.style.background = `linear-gradient(135deg,${color}cc,${color}55)`;
-    coverEl.innerHTML = `<span style="font-size:4rem;opacity:.7">📖</span>`;
-  }
-
-  document.getElementById('modalTitle').textContent = book.title;
-  document.getElementById('modalMeta').innerHTML = `
-    <span>✍️ ${escHtml(book.author)}</span>
-    <span>🏷️ ${catName}</span>
-    ${book.year  ? `<span>📅 ${book.year}</span>`           : ''}
-    ${book.pages ? `<span>📄 ${book.pages} صفحة</span>`    : ''}
-  `;
-
-  const price = Number(book.price) || 1200;
-  const discountPrice = book.discount_price ? Number(book.discount_price) : null;
-  const hasDiscount = discountPrice && discountPrice < price;
-
-  const pricingEl = document.getElementById('modalPricing');
-  if (pricingEl) {
-    pricingEl.innerHTML = hasDiscount
-      ? `<div class="modal-pricing-row">
-          <span class="modal-price-label">السعر الورقي:</span>
-          <span class="modal-price-curr">${discountPrice} دج</span>
-          <span class="modal-price-old">${price} دج</span>
-          <span class="modal-save-pill">توفير ${(price - discountPrice)} دج</span>
-        </div>`
-      : `<div class="modal-pricing-row">
-          <span class="modal-price-label">السعر الورقي:</span>
-          <span class="modal-price-curr">${price} دج</span>
-        </div>`;
-  }
-
-  document.getElementById('modalDesc').textContent = book.description || 'لا يوجد وصف متاح لهذا الإصدار.';
-
-  const actionsEl = document.getElementById('modalActions');
-  if (actionsEl) {
-    const pdfPrice = book.pdf_price ? Number(book.pdf_price) : 5.0;
-    actionsEl.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%">
-        <button class="btn-modal-order" onclick="openOrderModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
-          🛍️ اطلب نسختك الورقية الآن (الدفع عند الاستلام)
-        </button>
-        <button class="btn-modal-order" style="background:rgba(201,168,76,0.15);border:1.5px solid var(--gold);color:var(--gold);font-weight:700" onclick="addToCart(${book.id})">
-          🛒 أضف هذا الكتاب إلى سلة المشتريات
-        </button>
-        ${book.pdf_url ? `
-          <button class="btn-modal-paypal" onclick="openPaypalModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
-            💳 شراء نسخة PDF فوراً ($${pdfPrice})
-          </button>
-        ` : ''}
-      </div>
-    `;
-  }
-
-  // Load Reviews for this book
-  loadBookReviews(book.id);
-
-  document.getElementById('bookModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
+// ─── BOOK DETAILS & ORDER PAGE REDIRECT ──────────────────────────────────────
+window.openBookModal = function(bookId) {
+  window.location.href = `./book.html?id=${bookId}`;
 };
 
-async function loadBookReviews(bookId) {
-  const listEl = document.getElementById('bookReviewsList');
-  const avgNum = document.getElementById('ratingAvgNum');
-  const avgStars = document.getElementById('ratingAvgStars');
-  const countText = document.getElementById('ratingCountText');
-  if (!listEl) return;
-
-  listEl.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--text-muted)">جارٍ تحميل التقييمات...</div>`;
-
-  try {
-    const data = await api.get(`/api/books/${bookId}/reviews`);
-    const reviews = data.reviews || [];
-    const avg = Number(data.avg_rating || 5.0).toFixed(1);
-    const total = data.total_reviews || 0;
-
-    if (avgNum) avgNum.textContent = avg;
-    if (avgStars) avgStars.textContent = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
-    if (countText) countText.textContent = `(${total} مراجعات)`;
-
-    if (!reviews.length) {
-      listEl.innerHTML = `<div class="empty-reviews">لا توجد مراجعات معتمدة بعد. كن أول من يكتب مراجعة لهذا الكتاب!</div>`;
-      return;
-    }
-
-    listEl.innerHTML = reviews.map(r => {
-      const stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
-      const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-DZ') : '';
-      return `
-        <div class="review-item">
-          <div class="review-top">
-            <span class="reviewer-name">👤 ${escHtml(r.reviewer_name)}</span>
-            <div>
-              <span class="review-stars">${stars}</span>
-              <span class="review-date">${dateStr}</span>
-            </div>
-          </div>
-          <p class="review-comment">${escHtml(r.comment || '')}</p>
-        </div>
-      `;
-    }).join('');
-  } catch {
-    listEl.innerHTML = `<div class="empty-reviews">كن أول من يكتب مراجعة لهذا الكتاب!</div>`;
-  }
-}
-
-function initReviews() {
-  const starBtns = document.querySelectorAll('#starIcons .star-btn');
-  const ratingIn = document.getElementById('reviewRatingInput');
-
-  starBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const val = Number(btn.dataset.val);
-      if (ratingIn) ratingIn.value = val;
-      starBtns.forEach(b => {
-        b.classList.toggle('active', Number(b.dataset.val) <= val);
-      });
-    });
-  });
-
-  document.getElementById('addReviewForm')?.addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!activeModalBookId) return;
-
-    const name = document.getElementById('reviewNameInput')?.value.trim();
-    const comment = document.getElementById('reviewCommentInput')?.value.trim();
-    const rating = Number(ratingIn?.value || 5);
-
-    if (!name) {
-      toast('يرجى كتابة اسمك الكريم', 'error');
-      return;
-    }
-
-    const btn = document.getElementById('btnSubmitReview');
-    if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الإرسال...'; }
-
-    try {
-      await api.post(`/api/books/${activeModalBookId}/reviews`, {
-        reviewer_name: name,
-        rating,
-        comment
-      });
-      toast('شكراً لتقييمك! ستتم مراجعة التقييم واعتماده قريباً ✨');
-      document.getElementById('addReviewForm').reset();
-      if (ratingIn) ratingIn.value = 5;
-      starBtns.forEach(b => b.classList.add('active'));
-    } catch (err) {
-      toast('تعذّر إرسال التقييم: ' + (err.message || ''), 'error');
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'إرسال التقييم ✨'; }
-    }
-  });
-}
-
-// ─── ORDER CHECKOUT MODAL LOGIC (Single Book or Cart Checkout) ────────────────
+// ─── ORDER CHECKOUT MODAL LOGIC (Cart Checkout) ───────────────────────────────
 let cachedDeliveryRates = [];
 let activeOrderBook = null;
 let isCartCheckoutMode = false;
