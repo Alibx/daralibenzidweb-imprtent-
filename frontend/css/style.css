@@ -2014,3 +2014,19 @@ tr:hover td { background: rgba(201,168,76,0.04); color: var(--text-light); }
   background: var(--gold);
   border: 2px solid #0b1523;
 }
+
+/* ─── EMAIL COMPOSER MODAL STYLES ─── */
+#emailComposeModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 27, 42, 0.88);
+  backdrop-filter: blur(8px);
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+#emailComposeModal.open {
+  display: flex !important;
+}
