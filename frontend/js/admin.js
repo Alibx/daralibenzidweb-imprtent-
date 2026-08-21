@@ -1182,8 +1182,16 @@ function initSettingsSection() {
     const fromName = document.getElementById('smtpFromNameInput')?.value.trim();
     const fromEmail = document.getElementById('smtpFromEmailInput')?.value.trim();
 
+    if (!host || !user) {
+      toast('يرجى كتابة خادم البريد (Host) والبريد الإلكتروني للدار أولاً', 'error');
+      return;
+    }
+
+    const testBtn = document.getElementById('btnTestSmtp');
+    if (testBtn) { testBtn.disabled = true; testBtn.textContent = '⏳ جارٍ الفحص...'; }
+
     const feedback = document.getElementById('smtpStatusFeedback');
-    if (feedback) feedback.innerHTML = '<span style="color:var(--gold)">⏳ جارٍ الاتصال بالخادم وإرسال بريد الاختبار...</span>';
+    if (feedback) feedback.innerHTML = '<span style="color:var(--gold)">⏳ جارٍ الاتصال بخادم البريد وإرسال بريد الاختبار...</span>';
 
     try {
       const res = await api.post('/api/email/test', {
@@ -1199,7 +1207,9 @@ function initSettingsSection() {
       if (feedback) feedback.innerHTML = `<span style="color:var(--success)">✅ ${res.message}</span>`;
     } catch (err) {
       toast('فشل الاختبار: ' + (err.message || ''), 'error');
-      if (feedback) feedback.innerHTML = `<span style="color:var(--danger)">❌ ${err.message || 'فشل الاتصال بخادم البريد'}</span>`;
+      if (feedback) feedback.innerHTML = `<span style="color:var(--danger)">❌ ${err.message || 'فشل الاتصال بخادم البريد (تأكد من المنفذ وكلمة المرور)'}</span>`;
+    } finally {
+      if (testBtn) { testBtn.disabled = false; testBtn.textContent = '🧪 فحص وإرسال بريد اختباري'; }
     }
   });
 

@@ -48,13 +48,13 @@ export async function getSmtpConfig() {
 }
 
 export function createTransporter(config) {
-  const host = config.smtp_host || process.env.SMTP_HOST;
+  const host = (config.smtp_host || process.env.SMTP_HOST || '').trim();
   const port = Number(config.smtp_port || process.env.SMTP_PORT || 465);
-  const user = config.smtp_user || process.env.SMTP_USER;
-  const pass = config.smtp_pass || process.env.SMTP_PASS;
+  const user = (config.smtp_user || process.env.SMTP_USER || '').trim();
+  const pass = (config.smtp_pass || process.env.SMTP_PASS || '').trim();
 
   if (!host || !user || !pass) {
-    throw new Error("بيانات خادم البريد (SMTP) غير مكتملة. يرجى ضبط إعدادات البريد من لوحة التحكم أولاً.");
+    throw new Error("بيانات خادم البريد (SMTP) غير مكتملة. يرجى كتابة خادم البريد، الإيميل، وكلمة المرور.");
   }
 
   const isSecure = port === 465;
@@ -64,8 +64,11 @@ export function createTransporter(config) {
     port,
     secure: isSecure,
     auth: { user, pass },
+    connectionTimeout: 12000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
     tls: {
-      rejectUnauthorized: false // Allow self-signed or cPanel/StackCP certificates if needed
+      rejectUnauthorized: false
     }
   });
 }
