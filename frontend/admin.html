@@ -102,6 +102,10 @@
             <span class="link-icon">📑</span> طلبات النشر والمخطوطات
             <span id="manuscriptBadge" class="sidebar-badge" style="display: none; background: #e67e22; color: #fff; font-weight: bold">0</span>
           </button>
+          <button class="sidebar-link" data-section="inbox" data-role-access="all">
+            <span class="link-icon">📬</span> بريد الدار (الوارد)
+            <span id="inboxBadge" class="sidebar-badge" style="display: none; background: #3498db; color: #fff; font-weight: bold">0</span>
+          </button>
           <button class="sidebar-link" data-section="messages" data-role-access="admin">
             <span class="link-icon">📣</span> الرسائل الواردة
             <span id="msgBadge" class="sidebar-badge" style="display: none"></span>
@@ -411,6 +415,103 @@
               <div class="drawer-foot">
                 <button id="btnSaveManuStatus" class="btn-save" style="flex:1">💾 حفظ التحديث</button>
                 <button id="manuDrawerCancel" class="btn-cancel-drawer">إلغاء</button>
+              </div>
+            </aside>
+          </div>
+
+          <!-- ── SECTION: INBOX (بريد الدار الوارد) ── -->
+          <div id="sec-inbox" class="admin-section">
+            <div class="stat-cards-row" style="margin-bottom:1.5rem">
+              <div class="stat-card">
+                <div class="stat-card-icon">📬</div>
+                <div>
+                  <div id="dashInboxTotal" class="stat-card-num">0</div>
+                  <div class="stat-card-label">إجمالي الرسائل الواردة</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">📩</div>
+                <div>
+                  <div id="dashInboxUnread" class="stat-card-num" style="color:#3498db">0</div>
+                  <div class="stat-card-label">رسائل غير مقروءة</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">⭐</div>
+                <div>
+                  <div id="dashInboxStarred" class="stat-card-num" style="color:#f1c40f">0</div>
+                  <div class="stat-card-label">رسائل مميزة بنجمة</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="toolbar" style="flex-wrap:wrap;gap:0.75rem">
+              <div class="search-box" style="flex:1;min-width:260px">
+                🔍
+                <input
+                  type="search"
+                  id="inboxSearchInput"
+                  placeholder="ابحث باسم المرسل، عنوان الإيميل، أو الموضوع..."
+                />
+              </div>
+              <div class="order-filter-btns" style="display:flex;gap:0.4rem;flex-wrap:wrap">
+                <button class="filter-tab active" data-inbox-filter="all">الكل</button>
+                <button class="filter-tab" data-inbox-filter="unread">غير مقروء 📩</button>
+                <button class="filter-tab" data-inbox-filter="starred">المميزة بنجمة ⭐</button>
+              </div>
+              <button id="btnSyncInbox" class="btn-save" style="background:#2980b9;border-color:#2980b9;font-size:0.88rem;display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1.1rem" title="الاتصال بخادم البريد وجلب الرسائل الجديدة">
+                <span id="syncInboxIcon">🔄</span> <span id="syncInboxText">جلب وتحديث الرسائل</span>
+              </button>
+            </div>
+
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:40px">⭐</th>
+                    <th>المرسل</th>
+                    <th>الموضوع والمعاينة</th>
+                    <th>التاريخ والوقت</th>
+                    <th>الحالة</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="inboxTbody"></tbody>
+              </table>
+            </div>
+
+            <!-- INBOX EMAIL READER DRAWER OVERLAY -->
+            <div id="inboxDrawerOverlay" class="drawer-overlay"></div>
+            <!-- INBOX EMAIL READER DRAWER -->
+            <aside id="inboxDrawer" class="admin-drawer" style="max-width:720px;width:100%">
+              <div class="drawer-head">
+                <span id="inboxDrawerSubject" class="drawer-head-title">قراءة الرسالة الواردة</span>
+                <button id="inboxDrawerClose" class="modal-close">✕</button>
+              </div>
+              <div class="drawer-body" style="padding:1.5rem">
+                <input type="hidden" id="inboxActiveEmailId" />
+                
+                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+                  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.6rem;gap:0.5rem;flex-wrap:wrap">
+                    <div>
+                      <h4 id="inboxDetailSubject" style="margin:0 0 0.3rem;color:var(--gold);font-size:1.15rem">--</h4>
+                      <div style="font-size:0.85rem;color:var(--text-light)">
+                        <strong id="inboxDetailFromName">--</strong> &lt;<span id="inboxDetailFromEmail" style="color:var(--gold)">--</span>&gt;
+                      </div>
+                    </div>
+                    <span id="inboxDetailDate" style="font-size:0.8rem;color:var(--text-muted)">--</span>
+                  </div>
+                  <div style="font-size:0.8rem;color:var(--text-muted)">
+                    إلى: <span id="inboxDetailToEmail">info@daralibenzid.dz</span>
+                  </div>
+                </div>
+
+                <div id="inboxDetailBody" style="background:#0b1523;border:1px solid var(--border);border-radius:10px;padding:1.5rem;min-height:220px;font-size:0.92rem;line-height:1.7;color:var(--text-light);overflow-x:auto;direction:rtl"></div>
+              </div>
+              <div class="drawer-foot" style="display:flex;gap:0.8rem;flex-wrap:wrap">
+                <button id="btnInboxReply" class="btn-save" style="flex:1;background:#27ae60;border-color:#27ae60">↩️ رد فوري عبر البريد الرسمي</button>
+                <button id="btnInboxToggleRead" class="btn-outline" style="border-color:var(--border);color:var(--text-light)">✉️ تحديد كغير مقروء</button>
+                <button id="btnInboxDelete" class="btn-danger" style="padding:0.6rem 1.2rem">🗑️ حذف</button>
               </div>
             </aside>
           </div>
@@ -1282,6 +1383,41 @@
             </div>
 
             <div class="settings-section">
+              <h3>📥 إعدادات جلب واستقبال البريد الوارد (IMAP Settings)</h3>
+              <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.2rem">
+                يستخدم هذا القسم لربط خادم البريد الوارد وجلب الرسائل المرسلة إلى <strong>info@daralibenzid.dz</strong> تلقائياً وعرضها في لوحة التحكم.
+              </p>
+              <form id="imapSettingsForm" class="admin-form" novalidate>
+                <div class="settings-grid">
+                  <div class="form-group">
+                    <label>خادم البريد الوارد (IMAP Host) <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="imapHostInput" placeholder="imap.stackmail.com" value="imap.stackmail.com" />
+                  </div>
+                  <div class="form-group">
+                    <label>المنفذ (IMAP Port)</label>
+                    <select id="imapPortInput" class="form-select">
+                      <option value="993">993 (SSL / TLS مشفر - الافتراضي)</option>
+                      <option value="143">143 (STARTTLS)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>البريد الإلكتروني للدار (Username) <span style="color:var(--danger)">*</span></label>
+                    <input type="email" id="imapUserInput" placeholder="info@daralibenzid.dz" value="info@daralibenzid.dz" />
+                  </div>
+                  <div class="form-group">
+                    <label>كلمة مرور البريد (Email Password) <span style="color:var(--danger)">*</span></label>
+                    <input type="password" id="imapPassInput" placeholder="أدخل كلمة مرور إيميل info@daralibenzid.dz" />
+                  </div>
+                </div>
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">
+                  <button type="submit" id="btnSaveImap" class="btn-save">💾 حفظ إعدادات البريد الوارد (IMAP)</button>
+                  <button type="button" id="btnTestImap" class="btn-outline" style="border-color:#2980b9;color:#2980b9">🔄 جلب وتحديث الرسائل الآن</button>
+                </div>
+                <div id="imapStatusFeedback" style="font-size:0.88rem;margin-top:0.8rem"></div>
+              </form>
+            </div>
+
+            <div class="settings-section">
               <h3>🔐 تغيير كلمة مرور الأدمن</h3>
               <div class="admin-form settings-grid">
                 <div class="form-group">
@@ -1463,6 +1599,6 @@
         if (btn) btn.click();
       };
     </script>
-    <script type="module" src="./js/admin.js?v=7"></script>
+    <script type="module" src="./js/admin.js?v=8"></script>
   </body>
 </html>

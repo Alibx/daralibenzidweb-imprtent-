@@ -183,6 +183,7 @@ async function showSection(sec) {
     dashboard: 'لوحة الإحصاء',
     orders: 'إدارة الطلبات الواردة',
     manuscripts: 'طلبات النشر والمخطوطات',
+    inbox: 'بريد الدار الرسمي — صندوق الرسائل الواردة',
     books: 'إدارة الكتب',
     categories: 'إدارة التصنيفات',
     reviews: 'تقييمات ومراجعات الكتب',
@@ -200,6 +201,7 @@ async function showSection(sec) {
   if (sec === 'dashboard') await renderDashboard();
   if (sec === 'orders') await renderOrdersSection();
   if (sec === 'manuscripts') await renderManuscriptsSection();
+  if (sec === 'inbox') await renderInboxSection();
   if (sec === 'books') await renderBooksSection();
   if (sec === 'categories') await renderCategoriesSection();
   if (sec === 'reviews') await renderReviewsSection();
@@ -244,6 +246,14 @@ async function updateUnreadBadge() {
       const pending = manuStats.pending || 0;
       manuBadge.textContent = pending || '';
       manuBadge.style.display = pending ? 'inline' : 'none';
+    }
+
+    const inboxStats = await api.get('/api/inbox/stats').catch(() => null);
+    const inboxBadge = document.getElementById('inboxBadge');
+    if (inboxBadge && inboxStats) {
+      const unread = inboxStats.unread || 0;
+      inboxBadge.textContent = unread || '';
+      inboxBadge.style.display = unread ? 'inline' : 'none';
     }
 
     const revRows = await api.get('/api/admin/reviews?status=pending');
@@ -1110,6 +1120,19 @@ async function renderSettingsSection() {
       }
     }
   } catch { /* silent */ }
+
+  // Load IMAP Settings
+  try {
+    const imap = await api.get('/api/inbox/settings/config');
+    if (imap) {
+      if (document.getElementById('imapHostInput')) document.getElementById('imapHostInput').value = imap.imap_host || 'imap.stackmail.com';
+      if (document.getElementById('imapPortInput')) document.getElementById('imapPortInput').value = imap.imap_port || '993';
+      if (document.getElementById('imapUserInput')) document.getElementById('imapUserInput').value = imap.imap_user || 'info@daralibenzid.dz';
+      if (imap.imap_pass_set && document.getElementById('imapPassInput')) {
+        document.getElementById('imapPassInput').placeholder = '•••••••• (كلمة المرور محفوظة مسبقاً)';
+      }
+    }
+  } catch { /* silent */ }
 }
 
 function initSettingsSection() {
@@ -1210,6 +1233,63 @@ function initSettingsSection() {
       if (feedback) feedback.innerHTML = `<span style="color:var(--danger)">❌ ${err.message || 'فشل الاتصال بخادم البريد (تأكد من المنفذ وكلمة المرور)'}</span>`;
     } finally {
       if (testBtn) { testBtn.disabled = false; testBtn.textContent = '🧪 فحص وإرسال بريد اختباري'; }
+    }
+  });
+
+  // Save IMAP Settings
+  document.getElementById('imapSettingsForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const host = document.getElementById('imapHostInput')?.value.trim();
+    const port = Number(document.getElementById('imapPortInput')?.value || 993);
+    const user = document.getElementById('imapUserInput')?.value.trim();
+    const pass = document.getElementById('imapPassInput')?.value.trim();
+
+    if (!host || !user) {
+      toast('يرجى كتابة خادم البريد الوارد (IMAP Host) واسم المستخدم', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSaveImap');
+    if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الحفظ...'; }
+
+    try {
+      const payload = { imap_host: host, imap_port: port, imap_user: user };
+      if (pass) payload.imap_pass = pass;
+
+      await api.put('/api/inbox/settings/config', payload);
+      toast('✅ تم حفظ إعدادات البريد الوارد (IMAP) بنجاح');
+    } catch (err) {
+      toast('تعذّر حفظ إعدادات IMAP: ' + (err.message || ''), 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '💾 حفظ إعدادات البريد الوارد (IMAP)'; }
+    }
+  });
+
+  // Test / Trigger IMAP Sync from Settings
+  document.getElementById('btnTestImap')?.addEventListener('click', async () => {
+    const feedback = document.getElementById('imapStatusFeedback');
+    const testBtn = document.getElementById('btnTestImap');
+    if (testBtn) { testBtn.disabled = true; testBtn.textContent = '⏳ جارٍ الاتصال وجلب الرسائل...'; }
+    if (feedback) feedback.innerHTML = '<span style="color:var(--gold)">⏳ جارٍ الاتصال بخادم IMAP وجلب الرسائل الواردة...</span>';
+
+    try {
+      const host = document.getElementById('imapHostInput')?.value.trim();
+      const port = Number(document.getElementById('imapPortInput')?.value || 993);
+      const user = document.getElementById('imapUserInput')?.value.trim();
+      const pass = document.getElementById('imapPassInput')?.value.trim();
+
+      const config = { host, port, user };
+      if (pass) config.pass = pass;
+
+      const res = await api.post('/api/inbox/sync', { config });
+      toast('🎉 ' + res.message);
+      if (feedback) feedback.innerHTML = `<span style="color:var(--success)">✅ ${res.message}</span>`;
+      await updateUnreadBadge();
+    } catch (err) {
+      toast('تعذّر جلب الرسائل: ' + (err.message || ''), 'error');
+      if (feedback) feedback.innerHTML = `<span style="color:var(--danger)">❌ ${err.message || 'فشل الاتصال بخادم IMAP'}</span>`;
+    } finally {
+      if (testBtn) { testBtn.disabled = false; testBtn.textContent = '🔄 جلب وتحديث الرسائل الآن'; }
     }
   });
 
@@ -2061,6 +2141,258 @@ function initManuscriptsSection() {
   });
 }
 
+// ─── SECTION: INBOX (بريد الدار الوارد) ───────────────────────────────────────
+let adminInboxEmails = [];
+let inboxFilterStatus = 'all';
+let inboxSearchQuery = '';
+
+async function renderInboxSection() {
+  const tbody = document.getElementById('inboxTbody');
+  if (!tbody) return;
+
+  try {
+    const params = new URLSearchParams();
+    if (inboxFilterStatus && inboxFilterStatus !== 'all') params.set('filter', inboxFilterStatus);
+    if (inboxSearchQuery) params.set('search', inboxSearchQuery);
+
+    const [emails, stats] = await Promise.all([
+      api.get(`/api/inbox?${params.toString()}`).catch(() => []),
+      api.get('/api/inbox/stats').catch(() => null)
+    ]);
+
+    adminInboxEmails = Array.isArray(emails) ? emails : [];
+
+    // Update stats cards
+    if (stats) {
+      const elTot = document.getElementById('dashInboxTotal');
+      const elUnr = document.getElementById('dashInboxUnread');
+      const elSta = document.getElementById('dashInboxStarred');
+      if (elTot) elTot.textContent = stats.total || 0;
+      if (elUnr) elUnr.textContent = stats.unread || 0;
+      if (elSta) elSta.textContent = stats.starred || 0;
+    }
+  } catch {
+    adminInboxEmails = [];
+  }
+
+  await updateUnreadBadge();
+
+  if (!adminInboxEmails.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:3rem">
+      <div style="font-size:2rem;margin-bottom:0.5rem">📭</div>
+      <div>لا توجد رسائل واردة مطابقة</div>
+      <div style="font-size:0.8rem;margin-top:0.4rem;color:var(--text-muted)">اضغط على زر "جلب وتحديث الرسائل" لفحص البريد من الخادم</div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = adminInboxEmails.map(em => {
+    const isUnread = (em.is_read === 0 || em.is_read === false);
+    const isStarred = (em.is_starred === 1 || em.is_starred === true);
+    const dateStr = em.date ? new Date(em.date).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+    const initial = (em.from_name || em.from_email || 'U').charAt(0).toUpperCase();
+    const snippet = (em.body_text || '').replace(/\s+/g, ' ').slice(0, 75);
+
+    return `
+    <tr class="inbox-row ${isUnread ? 'unread-row' : ''}" style="${isUnread ? 'background:rgba(52,152,219,0.06);font-weight:600' : ''}">
+      <td style="text-align:center">
+        <button onclick="toggleInboxStar(${em.id}, ${isStarred ? 1 : 0})" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:${isStarred ? '#f1c40f' : 'rgba(255,255,255,0.2)'}" title="${isStarred ? 'إزالة النجمة' : 'تمييز بنجمة'}">
+          ${isStarred ? '★' : '☆'}
+        </button>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.6rem">
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.88rem;flex-shrink:0">
+            ${initial}
+          </div>
+          <div>
+            <div style="color:var(--text-light);font-size:0.92rem">${escHtml(em.from_name || em.from_email)}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);direction:ltr;text-align:right">&lt;${escHtml(em.from_email)}&gt;</div>
+          </div>
+        </div>
+      </td>
+      <td style="cursor:pointer" onclick="openInboxReader(${em.id})">
+        <div style="color:${isUnread ? 'var(--gold)' : 'var(--text-light)'};font-size:0.92rem;margin-bottom:0.2rem">
+          ${isUnread ? '📩 ' : ''}${escHtml(em.subject || '(بدون موضوع)')}
+        </div>
+        <div style="font-size:0.8rem;color:var(--text-muted);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          ${escHtml(snippet || '—')}
+        </div>
+      </td>
+      <td style="font-size:0.82rem;color:var(--text-muted);white-space:nowrap">${dateStr}</td>
+      <td>
+        <span class="status-badge" style="background:${isUnread ? '#3498db' : 'rgba(255,255,255,0.08)'};color:${isUnread ? '#fff' : 'var(--text-muted)'}">
+          ${isUnread ? 'غير مقروء 📩' : 'مقروء ✓'}
+        </span>
+      </td>
+      <td>
+        <div class="action-btns" style="display:flex;gap:0.35rem">
+          <button class="btn-edit" onclick="openInboxReader(${em.id})" title="قراءة الرسالة">👁️ قراءة</button>
+          <button class="btn-save" style="background:#27ae60;border-color:#27ae60;padding:0.3rem 0.6rem;font-size:0.8rem" onclick="openEmailForInboxReply(${em.id})" title="رد فوري">↩️ رد</button>
+          <button class="btn-del" onclick="deleteInboxEmail(${em.id})" title="حذف الرسالة">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.openInboxReader = async function(id) {
+  try {
+    const em = await api.get(`/api/inbox/${id}`);
+    if (!em) return;
+
+    document.getElementById('inboxActiveEmailId').value = em.id;
+    document.getElementById('inboxDrawerSubject').textContent = em.subject || 'قراءة الرسالة';
+    document.getElementById('inboxDetailSubject').textContent = em.subject || '(بدون موضوع)';
+    document.getElementById('inboxDetailFromName').textContent = em.from_name || em.from_email;
+    document.getElementById('inboxDetailFromEmail').textContent = em.from_email;
+    document.getElementById('inboxDetailToEmail').textContent = em.to_email || 'info@daralibenzid.dz';
+    document.getElementById('inboxDetailDate').textContent = em.date ? new Date(em.date).toLocaleString('ar-DZ') : '';
+
+    const bodyEl = document.getElementById('inboxDetailBody');
+    if (bodyEl) {
+      if (em.body_html && em.body_html.trim().length > 0) {
+        bodyEl.innerHTML = em.body_html;
+      } else {
+        bodyEl.innerHTML = `<pre style="font-family:inherit;white-space:pre-wrap;margin:0">${escHtml(em.body_text || '')}</pre>`;
+      }
+    }
+
+    const isRead = (em.is_read === 1 || em.is_read === true);
+    const toggleBtn = document.getElementById('btnInboxToggleRead');
+    if (toggleBtn) toggleBtn.textContent = isRead ? '✉️ تحديد كغير مقروء' : '✓ تحديد كمقروء';
+
+    document.getElementById('inboxDrawer').classList.add('open');
+    document.getElementById('inboxDrawerOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    renderInboxSection();
+  } catch (err) {
+    toast('تعذّر فتح تفاصيل الرسالة: ' + (err.message || ''), 'error');
+  }
+};
+
+window.openEmailForInboxReply = function(id) {
+  const em = adminInboxEmails.find(x => x.id === id);
+  if (!em) return;
+  const replySubject = em.subject?.startsWith('Re:') || em.subject?.startsWith('رد:') ? em.subject : `Re: ${em.subject || ''}`;
+  window.openEmailComposer({
+    recipientName: em.from_name || '',
+    recipientEmail: em.from_email || '',
+    subject: replySubject,
+    referenceType: 'inbox',
+    referenceId: em.id,
+    referenceTitle: em.subject || '',
+    defaultTemplate: 'msg_ack'
+  });
+};
+
+window.toggleInboxStar = async function(id, currentStar) {
+  try {
+    const newVal = currentStar ? 0 : 1;
+    await api.patch(`/api/inbox/${id}/star`, { is_starred: newVal });
+    await renderInboxSection();
+  } catch {
+    toast('تعذّر تحديث تمييز الرسالة', 'error');
+  }
+};
+
+window.toggleInboxRead = async function(id, currentRead) {
+  try {
+    const newVal = currentRead ? 0 : 1;
+    await api.patch(`/api/inbox/${id}/read`, { is_read: newVal });
+    await renderInboxSection();
+    await updateUnreadBadge();
+  } catch {
+    toast('تعذّر تحديث حالة القراءة', 'error');
+  }
+};
+
+window.deleteInboxEmail = function(id) {
+  confirmDialog('هل أنت متأكد من حذف هذه الرسالة نهائياً؟', async () => {
+    try {
+      await api.del(`/api/inbox/${id}`);
+      toast('تم حذف الرسالة بنجاح');
+      closeInboxDrawer();
+      await renderInboxSection();
+      await updateUnreadBadge();
+    } catch {
+      toast('تعذّر حذف الرسالة', 'error');
+    }
+  });
+};
+
+function closeInboxDrawer() {
+  document.getElementById('inboxDrawer')?.classList.remove('open');
+  document.getElementById('inboxDrawerOverlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function syncInboxEmails() {
+  const btn = document.getElementById('btnSyncInbox');
+  const icon = document.getElementById('syncInboxIcon');
+  const text = document.getElementById('syncInboxText');
+
+  if (btn) btn.disabled = true;
+  if (icon) icon.textContent = '⏳';
+  if (text) text.textContent = 'جارٍ جلب الرسائل...';
+
+  try {
+    const res = await api.post('/api/inbox/sync');
+    toast(`🎉 ${res.message}`);
+    await renderInboxSection();
+    await updateUnreadBadge();
+  } catch (err) {
+    toast('تعذّر جلب الرسائل: ' + (err.message || 'تأكد من ضبط إعدادات IMAP في قسم الإعدادات'), 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.textContent = '🔄';
+    if (text) text.textContent = 'جلب وتحديث الرسائل';
+  }
+}
+
+function initInboxSection() {
+  document.querySelectorAll('#sec-inbox .filter-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sec-inbox .filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      inboxFilterStatus = btn.dataset.inboxFilter || 'all';
+      renderInboxSection();
+    });
+  });
+
+  document.getElementById('inboxSearchInput')?.addEventListener('input', e => {
+    inboxSearchQuery = e.target.value;
+    renderInboxSection();
+  });
+
+  document.getElementById('btnSyncInbox')?.addEventListener('click', syncInboxEmails);
+
+  document.getElementById('inboxDrawerClose')?.addEventListener('click', closeInboxDrawer);
+  document.getElementById('inboxDrawerOverlay')?.addEventListener('click', closeInboxDrawer);
+
+  document.getElementById('btnInboxReply')?.addEventListener('click', () => {
+    const id = Number(document.getElementById('inboxActiveEmailId')?.value);
+    if (id) {
+      closeInboxDrawer();
+      openEmailForInboxReply(id);
+    }
+  });
+
+  document.getElementById('btnInboxToggleRead')?.addEventListener('click', async () => {
+    const id = Number(document.getElementById('inboxActiveEmailId')?.value);
+    if (id) {
+      await toggleInboxRead(id, 1);
+      closeInboxDrawer();
+    }
+  });
+
+  document.getElementById('btnInboxDelete')?.addEventListener('click', () => {
+    const id = Number(document.getElementById('inboxActiveEmailId')?.value);
+    if (id) deleteInboxEmail(id);
+  });
+}
+
 // ─── SECTION: REVIEWS (تقييمات ومراجعات الكتب) ──────────────────────────────
 let adminReviews = [];
 let reviewFilterStatus = 'all';
@@ -2401,6 +2733,7 @@ function initEmailComposer() {
       closeModal();
       if (reference_type === 'manuscript') renderManuscriptsSection();
       if (reference_type === 'message') renderMessagesSection();
+      if (reference_type === 'inbox') renderInboxSection();
     } catch (err) {
       toast('تعذّر إرسال البريد: ' + (err.message || 'تأكد من ضبط إعدادات SMTP'), 'error');
     } finally {
@@ -2418,6 +2751,7 @@ document.addEventListener('DOMContentLoaded', () => {
   startLivePolling();
   initOrdersSection();
   initManuscriptsSection();
+  initInboxSection();
   initBooksSection();
   initCategoriesSection();
   initReviewsSection();

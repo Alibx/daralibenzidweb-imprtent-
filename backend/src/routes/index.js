@@ -16,6 +16,7 @@ import deliveryRouter from "./delivery.js";
 import manuscriptsRouter from "./manuscripts.js";
 import reviewsRouter from "./reviews.js";
 import emailRouter from "./email.js";
+import inboxRouter from "./inbox.js";
 
 const router = Router();
 
@@ -36,5 +37,6 @@ router.use(deliveryRouter);
 router.use(manuscriptsRouter);
 router.use(reviewsRouter);
 router.use(emailRouter);
+router.use(inboxRouter);
 
 export default router;
