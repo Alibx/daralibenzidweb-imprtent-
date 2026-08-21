@@ -27,6 +27,16 @@
   <!-- TOAST CONTAINER -->
   <div id="toastContainer" class="toast-container"></div>
 
+  <!-- TOP ANNOUNCEMENT BAR -->
+  <div id="announcementBar" class="announcement-bar" style="display:none">
+    <div class="announcement-content">
+      <span class="announcement-badge">📢 إعلان</span>
+      <span id="announcementText" class="announcement-text">📚 مرحباً بكم في دار علي بن زيد للنشر والتوزيع — شحن متوفر لجميع الـ 58 ولاية جزائرية! 🚚</span>
+      <a id="announcementLink" href="#publications" class="announcement-link" style="display:none">اكتشف المزيد ←</a>
+    </div>
+    <button id="announcementClose" class="announcement-close" aria-label="إغلاق الإعلان">✕</button>
+  </div>
+
   <!-- OVERLAY BG (mobile drawer) -->
   <div id="overlayBg" class="overlay-bg"></div>
 
@@ -45,10 +55,17 @@
     </div>
     <ul class="mobile-links">
       <li><a href="#home">الرئيسية</a></li>
-      <li><a href="#publications">التأليفات</a></li>
+      <li><a href="#publications">المؤلفات</a></li>
+      <li><a href="#publish">انشر كتابك ✍️</a></li>
       <li><a href="#about">من نحن</a></li>
       <li><a href="#contact">تواصل معنا</a></li>
     </ul>
+    <div style="padding: 1.5rem 1rem">
+      <button id="mobileCartBtn" class="btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.5rem">
+        <span>🛒 سلة المشتريات</span>
+        <span id="mobileCartBadge" class="badge" style="background:var(--navy);color:var(--gold);padding:0.2rem 0.6rem;border-radius:20px;font-size:0.8rem;font-weight:bold">0</span>
+      </button>
+    </div>
   </nav>
 
   <!-- NAVBAR -->
@@ -60,12 +77,20 @@
     <ul class="navbar-links">
       <li><a href="#home">الرئيسية</a></li>
       <li><a href="#publications">المؤلفات</a></li>
+      <li><a href="#publish">انشر كتابك ✍️</a></li>
       <li><a href="#about">من نحن</a></li>
       <li><a href="#contact">تواصل معنا</a></li>
     </ul>
-    <button id="hamburger" class="hamburger" aria-label="فتح القائمة">
-      <span></span><span></span><span></span>
-    </button>
+    <div class="navbar-actions">
+      <button id="navCartBtn" class="nav-cart-btn" aria-label="سلة التسوق" title="عرض سلة الكتب">
+        <span class="cart-icon">🛒</span>
+        <span class="cart-label">السلة</span>
+        <span id="cartBadge" class="cart-badge">0</span>
+      </button>
+      <button id="hamburger" class="hamburger" aria-label="فتح القائمة">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </header>
 
   <!-- HERO -->
@@ -218,6 +243,119 @@
     <div id="testimonialsGrid" class="testimonials-grid"></div>
   </section>
 
+  <!-- ─── SECTION: PUBLISH WITH US (انشر كتابك معنا) ─── -->
+  <section id="publish" class="section publish-section section-animate">
+    <div class="section-header">
+      <span class="section-label">للمؤلفين والباحثين</span>
+      <h2 class="section-title">انشر كتابك معنا</h2>
+      <div class="section-line"></div>
+      <p class="section-subtitle">
+        نرحب بتقديم المخطوطات والرسائل الأكاديمية والأعمال الأدبية والفكرية لتحكيمها وطباعتها وتوزيعها
+      </p>
+    </div>
+
+    <div class="publish-container">
+      <div class="publish-info-card">
+        <div class="publish-steps">
+          <div class="publish-step">
+            <span class="step-num">1</span>
+            <div class="step-content">
+              <h4>تقديم المخطوطة</h4>
+              <p>املأ النموذج أدناه مع إرفاق ملخص وخطة العمل أو الملف الكامل بصيغة PDF أو Word.</p>
+            </div>
+          </div>
+          <div class="publish-step">
+            <span class="step-num">2</span>
+            <div class="step-content">
+              <h4>التحكيم والقراءة</h4>
+              <p>تقوم لجنتنا العلمية والأدبية بمراجعة العمل وتقييمه والتواصل معك بشأن نتائج التقرير.</p>
+            </div>
+          </div>
+          <div class="publish-step">
+            <span class="step-num">3</span>
+            <div class="step-content">
+              <h4>التصميم والطباعة والتوزيع</h4>
+              <p>إخراج فني احترافي، تدقيق لغوي، طباعة فاخرة، وتوزيع عبر معارض الكتاب ومكتبات الوطن.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="publish-guarantee">
+          <span>🔒 نحفظ حقوق الملكية الفكرية لجميع المخطوطات والملفات المرسلة إلينا بسرية تامة.</span>
+        </div>
+      </div>
+
+      <div class="publish-form-card">
+        <form id="manuscriptForm" novalidate>
+          <h3 class="form-card-title">✍️ استمارة تقديم مخطوطة جديدة</h3>
+          
+          <div class="order-form-row">
+            <div class="form-group">
+              <label class="form-label">اسم المؤلف الكامل <span class="req" style="color:var(--danger)">*</span></label>
+              <input type="text" id="manuAuthorName" required class="form-input" placeholder="د. / أ. الاسم الكامل" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">رقم الهاتف (واتساب) <span class="req" style="color:var(--danger)">*</span></label>
+              <input type="tel" id="manuAuthorPhone" required class="form-input" placeholder="05 / 06 / 07 XX XX XX" />
+            </div>
+          </div>
+
+          <div class="order-form-row">
+            <div class="form-group">
+              <label class="form-label">البريد الإلكتروني</label>
+              <input type="email" id="manuAuthorEmail" class="form-input" placeholder="author@example.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">الولاية</label>
+              <select id="manuWilaya" class="form-select"></select>
+            </div>
+          </div>
+
+          <div class="order-form-row">
+            <div class="form-group" style="flex:1.4">
+              <label class="form-label">عنوان الكتاب / العمل <span class="req" style="color:var(--danger)">*</span></label>
+              <input type="text" id="manuBookTitle" required class="form-input" placeholder="العنوان الرئيسي والعنوان الفرعي إن وجد" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">المجال / التصنيف</label>
+              <select id="manuCategory" class="form-select">
+                <option value="دراسات إسلامية وفقهية">دراسات إسلامية وفقهية</option>
+                <option value="تاريخ وتراث">تاريخ وتراث</option>
+                <option value="أدب ورواية ونقد">أدب ورواية ونقد</option>
+                <option value="فكر وفلسفة">فكر وفلسفة</option>
+                <option value="علوم إنسانية واجتماعية">علوم إنسانية واجتماعية</option>
+                <option value="أطروحة / رسالة جامعية">أطروحة / رسالة جامعية</option>
+                <option value="أخرى">مجال آخر</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ملخص موجز عن الكتاب وأهم محاوره</label>
+            <textarea id="manuSummary" rows="3" class="form-input" placeholder="نبذة تعريفية عن موضوع الكتاب، أهدافه، والجمهور المستهدف..."></textarea>
+          </div>
+
+          <!-- File upload -->
+          <div class="form-group">
+            <label class="form-label">ملف المخطوطة أو المقدمة والفهرس (PDF, DOCX, DOC, ZIP) <span class="req" style="color:var(--danger)">*</span></label>
+            <div id="manuDropArea" class="file-upload-area" onclick="document.getElementById('manuFileInput').click()">
+              <div id="manuPlaceholder" class="file-upload-placeholder">
+                <span style="font-size:2.2rem">📄</span>
+                <span id="manuFileName">اضغط هنا لاختيار ملف المخطوطة من جهازك</span>
+                <span class="file-hint">الحجم الأقصى 35MB (PDF، Word، أو ZIP)</span>
+              </div>
+              <input type="file" id="manuFileInput" accept=".pdf,.doc,.docx,.zip,.rar" style="display:none" />
+            </div>
+          </div>
+
+          <button type="submit" id="btnSubmitManuscript" class="btn-primary" style="width:100%;padding:0.9rem;font-size:1.05rem;margin-top:0.8rem">
+            📤 إرسال طلب النشر للمراجعة
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- CONTACT -->
   <section id="contact" class="section contact section-animate">
     <div class="section-header">
@@ -354,7 +492,7 @@
 
   <!-- ═══ MODALS ═══ -->
 
-  <!-- 1. BOOK DETAILS MODAL -->
+  <!-- 1. BOOK DETAILS MODAL (with Reviews & Rating) -->
   <div id="bookModal" class="modal-overlay">
     <div class="modal-card">
       <button id="modalClose" class="modal-close-btn" aria-label="إغلاق">✕</button>
@@ -366,30 +504,100 @@
           <div id="modalPricing" class="modal-pricing-box"></div>
           <p id="modalDesc" class="modal-desc"></p>
           <div class="modal-actions" id="modalActions"></div>
+
+          <!-- BOOK REVIEWS & RATINGS SECTION -->
+          <div class="book-reviews-section">
+            <div class="reviews-header">
+              <h3 class="reviews-title">⭐ آراء وتقييمات القراء</h3>
+              <div id="bookRatingSummary" class="rating-summary-pill">
+                <span id="ratingAvgNum" class="rating-num">5.0</span>
+                <span id="ratingAvgStars" class="rating-stars">⭐⭐⭐⭐⭐</span>
+                <span id="ratingCountText" class="rating-count">(0 مراجعات)</span>
+              </div>
+            </div>
+
+            <!-- List of Reviews -->
+            <div id="bookReviewsList" class="reviews-list">
+              <div class="empty-reviews">لا توجد مراجعات بعد. كن أول من يكتب مراجعة لهذا الكتاب!</div>
+            </div>
+
+            <!-- Add Review Form -->
+            <form id="addReviewForm" class="add-review-form">
+              <h4 class="form-title">✍️ أضف رأيك وتقييمك في هذا الكتاب</h4>
+              <div class="star-picker-wrap">
+                <span class="star-label">تقييمك:</span>
+                <div class="stars-select" id="starIcons">
+                  <span class="star-btn" data-val="1">★</span>
+                  <span class="star-btn" data-val="2">★</span>
+                  <span class="star-btn" data-val="3">★</span>
+                  <span class="star-btn" data-val="4">★</span>
+                  <span class="star-btn active" data-val="5">★</span>
+                </div>
+                <input type="hidden" id="reviewRatingInput" value="5" />
+              </div>
+              <div class="form-group" style="margin-bottom:0.6rem">
+                <input type="text" id="reviewNameInput" class="form-input" placeholder="اسمك الكريم *" required />
+              </div>
+              <div class="form-group" style="margin-bottom:0.6rem">
+                <textarea id="reviewCommentInput" class="form-input" placeholder="اكتب رأيك أو مراجعتك حول الكتاب..." rows="2"></textarea>
+              </div>
+              <button type="submit" id="btnSubmitReview" class="btn-submit-review">إرسال التقييم ✨</button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 2. ORDER CHECKOUT MODAL (COD) -->
+  <!-- 2. SHOPPING CART DRAWER -->
+  <div id="cartDrawerOverlay" class="drawer-overlay"></div>
+  <aside id="cartDrawer" class="cart-drawer" aria-label="سلة المشتريات">
+    <div class="cart-drawer-header">
+      <div class="cart-header-title">
+        <span style="font-size:1.25rem">🛒 سلة المشتريات</span>
+        <span id="cartDrawerCountBadge" class="cart-drawer-badge">0 كتب</span>
+      </div>
+      <button id="cartDrawerClose" class="drawer-close" aria-label="إغلاق">✕</button>
+    </div>
+
+    <div id="cartDrawerBody" class="cart-drawer-body">
+      <!-- Dynamically filled with cart items -->
+    </div>
+
+    <div id="cartDrawerFooter" class="cart-drawer-footer">
+      <div class="cart-summary-row">
+        <span class="cart-subtotal-label">مجموع الكتب:</span>
+        <strong id="cartSubtotalVal" class="cart-subtotal-val">0 دج</strong>
+      </div>
+      <p class="cart-shipping-note">🚚 تكلفة التوصيل تُحسب مرة واحدة فقط لجميع الكتب عند إتمام الطلب بحسب ولايتك.</p>
+      <button id="btnCartCheckout" class="btn-primary" style="width:100%;padding:0.9rem;font-size:1.05rem;font-weight:700">
+        🛍️ إتمام الطلب والدفع عند الاستلام
+      </button>
+      <button id="btnCartContinue" class="btn-outline" style="width:100%;margin-top:0.6rem;padding:0.6rem">
+        ← متابعة تصفح الكتب
+      </button>
+    </div>
+  </aside>
+
+  <!-- 3. ORDER CHECKOUT MODAL (COD - Single book or Multi-item Cart) -->
   <div id="orderModal" class="modal-overlay">
     <div class="modal-card order-card-modal">
       <button id="orderModalClose" class="modal-close-btn" aria-label="إغلاق">✕</button>
       <div class="order-modal-header">
-        <span class="order-modal-badge">🛍️ طلب شراء كتاب</span>
-        <h2 class="order-modal-title">معلومات التوصيل والدفع عند الاستلام</h2>
-        <p class="order-modal-sub">املأ بياناتك وسيصلك الكتاب إلى باب منزلك أو أقرب نقطة استلام في ولايتك</p>
+        <span class="order-modal-badge" id="orderModalBadge">🛍️ طلب شراء كتاب</span>
+        <h2 class="order-modal-title" id="orderModalHeading">معلومات التوصيل والدفع عند الاستلام</h2>
+        <p class="order-modal-sub">املأ بياناتك وسيصلك طردك إلى باب منزلك أو أقرب نقطة استلام في ولايتك</p>
       </div>
 
       <div class="order-modal-layout">
-        <!-- Selected Book Preview -->
-        <div class="order-book-summary">
+        <!-- Selected Book / Multi-Item Preview -->
+        <div class="order-book-summary" id="orderBookSummaryContainer">
           <div id="orderBookCover" class="order-book-thumb"></div>
           <div class="order-book-details">
             <h3 id="orderBookTitle" class="order-book-name"></h3>
             <p id="orderBookAuthor" class="order-book-author"></p>
             <div id="orderBookPriceTag" class="order-book-price"></div>
-            <div class="order-qty-stepper">
+            <div class="order-qty-stepper" id="orderQtyStepper">
               <span class="qty-label">الكمية:</span>
               <button type="button" class="btn-qty" id="btnQtyMinus">-</button>
               <input type="number" id="orderQtyInput" value="1" min="1" max="20" readonly />
@@ -453,24 +661,31 @@
             </div>
           </div>
 
-          <!-- Coupon Box -->
-          <div class="coupon-box">
+          <!-- Coupon Code Input -->
+          <div class="form-group">
+            <label class="form-label">هل لديك كود خصم؟ (اختياري)</label>
             <div class="coupon-input-group">
-              <input type="text" id="orderCouponInput" placeholder="هل لديك كود خصم؟" class="coupon-input" />
-              <button type="button" id="btnApplyCoupon" class="btn-apply-coupon">تطبيق</button>
+              <input type="text" id="orderCouponInput" class="form-input" placeholder="أدخل رمز الكوبون..." style="text-transform:uppercase" />
+              <button type="button" id="btnApplyCoupon" class="btn-apply-coupon">تطبيق الخصم</button>
             </div>
-            <div id="couponStatusMsg" class="coupon-status"></div>
+            <div id="couponStatusMsg" class="coupon-msg"></div>
           </div>
 
-          <!-- Price Calculation Breakdown -->
-          <div class="order-calc-card">
+          <!-- Notes -->
+          <div class="form-group">
+            <label class="form-label">ملاحظات إضافية للموزع (اختياري)</label>
+            <textarea id="orderNotes" class="form-input" rows="2" placeholder="أي تعليمات خاصة بالوصول أو أفضل وقت للاتصال..."></textarea>
+          </div>
+
+          <!-- Price Calculation Summary Box -->
+          <div class="order-calc-box">
             <div class="calc-row">
-              <span>سعر الكتب (<span id="calcQty">1</span>):</span>
-              <span id="calcSubtotal">0 دج</span>
+              <span id="calcBookPriceLabel">سعر الكتب:</span>
+              <span id="calcBookPrice">0 دج</span>
             </div>
             <div class="calc-row">
               <span>تكلفة التوصيل:</span>
-              <span id="calcShipping">0 دج</span>
+              <span id="calcDeliveryPrice">-- دج</span>
             </div>
             <div class="calc-row discount-row" id="calcDiscountRow" style="display:none">
               <span>الخصم (كوبون):</span>
@@ -492,7 +707,7 @@
     </div>
   </div>
 
-  <!-- 3. PAYPAL DIGITAL PDF MODAL -->
+  <!-- 4. PAYPAL DIGITAL PDF MODAL -->
   <div id="paypalModal" class="modal-overlay">
     <div class="modal-card paypal-modal-card">
       <button id="paypalModalClose" class="modal-close-btn" aria-label="إغلاق">✕</button>
@@ -518,7 +733,7 @@
     </div>
   </div>
 
-  <!-- 4. ORDER SUCCESS MODAL -->
+  <!-- 5. ORDER SUCCESS MODAL -->
   <div id="orderSuccessModal" class="modal-overlay">
     <div class="modal-card order-success-card">
       <div class="success-icon-wrap">🎉</div>
@@ -526,7 +741,7 @@
       <p class="success-msg">شكراً لثقتك بدار علي بن زيد للنشر. تم تسجيل طلبك وسيقوم فريقنا بالتواصل معك هاتفياً لتأكيد الشحن في أقرب وقت.</p>
       <div class="success-details-box">
         <div class="detail-line"><span>رقم الطلب:</span> <strong id="successOrderId" style="color:var(--gold)">#--</strong></div>
-        <div class="detail-line"><span>الكتاب:</span> <strong id="successBookTitle">--</strong></div>
+        <div class="detail-line"><span>الكتب:</span> <strong id="successBookTitle">--</strong></div>
         <div class="detail-line"><span>الولاية:</span> <strong id="successWilaya">--</strong></div>
         <div class="detail-line"><span>المبلغ المطلوب عند الاستلام:</span> <strong id="successTotal" style="color:var(--gold)">-- دج</strong></div>
       </div>
@@ -536,10 +751,29 @@
     </div>
   </div>
 
+  <!-- 6. MANUSCRIPT SUCCESS MODAL -->
+  <div id="manuscriptSuccessModal" class="modal-overlay">
+    <div class="modal-card order-success-card">
+      <div class="success-icon-wrap">📜</div>
+      <h2 class="success-title">تم استلام طلب النشر بنجاح!</h2>
+      <p class="success-msg">شكراً لتقديم عملك إلى دار علي بن زيد للنشر. تم إرسال ملف المخطوطة إلى الهيئة الاستشارية والتحكيم وسنتواصل معك عبر الهاتف والواتساب فور اكتمال التقرير.</p>
+      <button type="button" id="btnManuSuccessClose" class="btn-save" style="width:100%;margin-top:1.5rem">
+        تم، شكراً لكم 👍
+      </button>
+    </div>
+  </div>
+
+  <!-- FLOATING WHATSAPP WIDGET -->
+  <a id="whatsappWidget" href="https://wa.me/213770921426?text=مرحباً%20دار%20علي%20بن%20زيد،%20أود%20الاستفسار%20بخصوص%20..." target="_blank" rel="noopener noreferrer" class="floating-whatsapp" aria-label="تواصل عبر واتساب">
+    <span class="whatsapp-tooltip">تواصل معنا عبر واتساب 💬</span>
+    <i class="fa-brands fa-whatsapp"></i>
+    <span class="whatsapp-ping"></span>
+  </a>
+
   <!-- FLOATING ADMIN BUTTON -->
   <a href="./admin.html" class="admin-float" title="لوحة تحكم الأدمن">⚙️ لوحة التحكم</a>
 
-  <script type="module" src="./js/main.js?v=5"></script>
+  <script type="module" src="./js/main.js?v=6"></script>
 </body>
 
 </html>

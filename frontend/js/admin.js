@@ -169,7 +169,7 @@ async function showSection(sec) {
   const isStaff = user.role === 'staff';
 
   // If staff user tries to navigate to restricted sections, force redirect to orders
-  const staffAllowed = ['orders', 'coupons', 'delivery'];
+  const staffAllowed = ['orders', 'manuscripts', 'coupons', 'delivery'];
   if (isStaff && !staffAllowed.includes(sec)) {
     sec = 'orders';
   }
@@ -182,8 +182,10 @@ async function showSection(sec) {
   const titles = {
     dashboard: 'لوحة الإحصاء',
     orders: 'إدارة الطلبات الواردة',
+    manuscripts: 'طلبات النشر والمخطوطات',
     books: 'إدارة الكتب',
     categories: 'إدارة التصنيفات',
+    reviews: 'تقييمات ومراجعات الكتب',
     coupons: 'إدارة أكواد الخصم',
     delivery: 'أسعار التوصيل (58 ولاية)',
     staff: 'إدارة الموظفين والصلاحيات',
@@ -197,8 +199,10 @@ async function showSection(sec) {
 
   if (sec === 'dashboard') await renderDashboard();
   if (sec === 'orders') await renderOrdersSection();
+  if (sec === 'manuscripts') await renderManuscriptsSection();
   if (sec === 'books') await renderBooksSection();
   if (sec === 'categories') await renderCategoriesSection();
+  if (sec === 'reviews') await renderReviewsSection();
   if (sec === 'coupons') await renderCouponsSection();
   if (sec === 'delivery') await renderDeliverySection();
   if (sec === 'staff') await renderStaffSection();
@@ -218,7 +222,7 @@ async function renderAllSections() {
   await showSection(initialSec);
 }
 
-// ─── UNREAD BADGE ─────────────────────────────────────────────────────────────
+// ─── UNREAD BADGES ────────────────────────────────────────────────────────────
 async function updateUnreadBadge() {
   try {
     const msgs = await api.get('/api/messages');
@@ -232,6 +236,22 @@ async function updateUnreadBadge() {
       const pending = orderStats.pending || 0;
       orderBadge.textContent = pending || '';
       orderBadge.style.display = pending ? 'inline' : 'none';
+    }
+
+    const manuStats = await api.get('/api/manuscripts/stats');
+    const manuBadge = document.getElementById('manuscriptBadge');
+    if (manuBadge && manuStats) {
+      const pending = manuStats.pending || 0;
+      manuBadge.textContent = pending || '';
+      manuBadge.style.display = pending ? 'inline' : 'none';
+    }
+
+    const revRows = await api.get('/api/admin/reviews?status=pending');
+    const revBadge = document.getElementById('reviewsBadge');
+    if (revBadge && Array.isArray(revRows)) {
+      const count = revRows.length;
+      revBadge.textContent = count || '';
+      revBadge.style.display = count ? 'inline' : 'none';
     }
   } catch { /* silent */ }
 }
@@ -1064,25 +1084,34 @@ function initContactSection() {
 async function renderSettingsSection() {
   try {
     const s = await api.get('/api/settings');
-    ['hero_title', 'hero_subtitle', 'stat_years', 'stat_books', 'stat_readers', 'copyright'].forEach(k => {
+    ['hero_title', 'hero_subtitle', 'stat_years', 'stat_books', 'stat_readers', 'copyright', 'announcement_text', 'announcement_link'].forEach(k => {
       const el = document.querySelector(`#sec-settings [name="${k}"]`);
       if (el) el.value = s[k] || '';
     });
+    const activeEl = document.querySelector('#sec-settings [name="announcement_active"]');
+    if (activeEl) {
+      activeEl.checked = s.announcement_active !== 0 && s.announcement_active !== '0';
+    }
   } catch { /* silently skip — form stays blank */ }
 }
 
 function initSettingsSection() {
   document.getElementById('saveSettingsBtn')?.addEventListener('click', async () => {
     const data = {};
-    ['hero_title', 'hero_subtitle', 'stat_years', 'stat_books', 'stat_readers', 'copyright'].forEach(k => {
+    ['hero_title', 'hero_subtitle', 'stat_years', 'stat_books', 'stat_readers', 'copyright', 'announcement_text', 'announcement_link'].forEach(k => {
       const el = document.querySelector(`#sec-settings [name="${k}"]`);
       if (el) data[k] = el.value.trim();
     });
+    const activeEl = document.querySelector('#sec-settings [name="announcement_active"]');
+    if (activeEl) {
+      data.announcement_active = activeEl.checked ? 1 : 0;
+    }
+
     const btn = document.getElementById('saveSettingsBtn');
     btn.disabled = true;
     try {
       await api.put('/api/settings', data);
-      toast('تم حفظ الإعدادات العامة بنجاح');
+      toast('تم حفظ الإعدادات العامة وشريط الإعلانات بنجاح');
     } catch {
       toast('تعذّر حفظ الإعدادات', 'error');
     } finally {
@@ -1169,6 +1198,21 @@ async function renderOrdersSection() {
     const cleanPhone = (o.customer_phone || '').replace(/[^0-9]/g, '');
     const waPhone = cleanPhone.startsWith('0') ? '213' + cleanPhone.slice(1) : (cleanPhone.startsWith('213') ? cleanPhone : '213' + cleanPhone);
 
+    let booksDisplay = `<div style="font-weight:600">${escHtml(o.book_title)}</div><div style="font-size:0.82rem;color:var(--text-muted)">الكمية: <strong>${o.quantity}</strong> × ${o.unit_price || o.book_price || ''} دج</div>`;
+
+    if (o.items) {
+      try {
+        const parsed = JSON.parse(o.items);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          booksDisplay = parsed.map(it => `
+            <div style="font-size:0.85rem;margin-bottom:0.2rem">
+              📚 <strong>${escHtml(it.title || it.book_title)}</strong> <span style="color:var(--gold)">(×${it.quantity || 1})</span>
+            </div>
+          `).join('');
+        }
+      } catch { /* use default */ }
+    }
+
     return `
     <tr class="order-row" data-id="${o.id}">
       <td><strong style="color:var(--gold);font-size:1.05rem">#${o.id}</strong></td>
@@ -1180,17 +1224,14 @@ async function renderOrdersSection() {
           <a href="https://wa.me/${waPhone}" target="_blank" rel="noopener" style="background:#25D366;color:#fff;border-radius:4px;padding:2px 6px;font-size:0.75rem;text-decoration:none" title="مراسلة واتساب">واتساب</a>
         </div>
       </td>
-      <td>
-        <div style="font-weight:600">${escHtml(o.book_title)}</div>
-        <div style="font-size:0.82rem;color:var(--text-muted)">الكمية: <strong>${o.quantity}</strong> × ${o.unit_price} دج</div>
-      </td>
+      <td>${booksDisplay}</td>
       <td>
         <div><strong>${escHtml(o.wilaya_name)}</strong> (${escHtml(o.commune || '—')})</div>
         <div style="font-size:0.8rem;color:var(--text-muted)">${escHtml(o.address || '')} [${o.delivery_type === 'desk' ? '🏢 استلام من المكتب' : '🏠 توصيل للمنزل'}]</div>
       </td>
       <td>
         <div style="font-weight:bold;color:var(--gold);font-size:1.1rem">${o.total_price} دج</div>
-        <div style="font-size:0.78rem;color:var(--text-muted)">توصيل: ${o.shipping_fee} دج</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">توصيل: ${o.shipping_fee || o.delivery_price || 0} دج</div>
       </td>
       <td>${o.coupon_code ? `<span class="coupon-tag" style="background:rgba(201,168,76,0.15);color:var(--gold);padding:2px 6px;border-radius:4px;font-weight:bold">${escHtml(o.coupon_code)} (-${o.discount_amount}دج)</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
       <td>
@@ -1252,9 +1293,9 @@ window.openInvoice = function(orderId) {
 
   document.getElementById('invBookTitle').textContent = o.book_title;
   document.getElementById('invQty').textContent = o.quantity;
-  document.getElementById('invUnitPrice').textContent = `${o.unit_price} دج`;
-  document.getElementById('invSubtotal').textContent = `${o.subtotal} دج`;
-  document.getElementById('invDelivery').textContent = `${o.shipping_fee} دج`;
+  document.getElementById('invUnitPrice').textContent = `${o.unit_price || o.book_price || 0} دج`;
+  document.getElementById('invSubtotal').textContent = `${o.subtotal || o.book_price || 0} دج`;
+  document.getElementById('invDelivery').textContent = `${o.shipping_fee || o.delivery_price || 0} دج`;
 
   const discRow = document.getElementById('invDiscountRow');
   if (o.discount_amount > 0) {
@@ -1283,6 +1324,13 @@ function initOrdersSection() {
   document.getElementById('orderSearch')?.addEventListener('input', e => {
     orderSearchQuery = e.target.value;
     renderOrdersSection();
+  });
+
+  document.getElementById('btnExportOrdersExcel')?.addEventListener('click', () => {
+    const apiBase = window.__API_BASE__ || 'https://daralibenzidweb.onrender.com';
+    const exportUrl = `${apiBase.replace(/\/+$/, '')}/api/orders/export?status=${orderFilterStatus || 'all'}`;
+    toast('جارٍ تجهيز وتحميل ملف Excel للطلبات... 📊');
+    window.open(exportUrl, '_blank');
   });
 
   const invClose = document.getElementById('invoiceModalClose');
@@ -1738,13 +1786,376 @@ function initStaffSection() {
   });
 }
 
+// ─── SECTION: MANUSCRIPTS (طلبات النشر والمخطوطات) ───────────────────────────
+let adminManuscripts = [];
+let manuFilterStatus = 'all';
+let manuSearchQuery = '';
+
+async function renderManuscriptsSection() {
+  const tbody = document.getElementById('manuscriptsTbody');
+  if (!tbody) return;
+
+  try {
+    const stats = await api.get('/api/manuscripts/stats');
+    if (stats) {
+      const el = id => document.getElementById(id);
+      if (el('dashManuTotal')) el('dashManuTotal').textContent = stats.total || 0;
+      if (el('dashManuPending')) el('dashManuPending').textContent = stats.pending || 0;
+      if (el('dashManuReview')) el('dashManuReview').textContent = stats.under_review || 0;
+      if (el('dashManuAccepted')) el('dashManuAccepted').textContent = stats.accepted || 0;
+    }
+  } catch { /* silent */ }
+
+  try {
+    const data = await api.get('/api/manuscripts');
+    adminManuscripts = Array.isArray(data) ? data : [];
+  } catch {
+    adminManuscripts = [];
+  }
+
+  const filtered = adminManuscripts.filter(m => {
+    const matchStatus = (manuFilterStatus === 'all') || (m.status === manuFilterStatus);
+    const q = manuSearchQuery.toLowerCase().trim();
+    const matchSearch = !q ||
+      (m.author_name && m.author_name.toLowerCase().includes(q)) ||
+      (m.author_phone && m.author_phone.includes(q)) ||
+      (m.book_title && m.book_title.toLowerCase().includes(q)) ||
+      (m.category && m.category.toLowerCase().includes(q)) ||
+      String(m.id).includes(q);
+    return matchStatus && matchSearch;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2.5rem">لا توجد طلبات نشر مطابقة</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(m => {
+    const dateStr = m.created_at ? new Date(m.created_at).toLocaleDateString('ar-DZ') : '—';
+    const cleanPhone = (m.author_phone || '').replace(/[^0-9]/g, '');
+    const waPhone = cleanPhone.startsWith('0') ? '213' + cleanPhone.slice(1) : (cleanPhone.startsWith('213') ? cleanPhone : '213' + cleanPhone);
+
+    const statusBadgeMap = {
+      pending: '<span class="status-badge" style="background:#e67e22;color:#fff">⏳ جديد (قيد المعاينة)</span>',
+      under_review: '<span class="status-badge" style="background:#3498db;color:#fff">🔍 قيد التحكيم</span>',
+      accepted: '<span class="status-badge" style="background:#2ecc71;color:#fff">✅ مقبول للنشر</span>',
+      rejected: '<span class="status-badge" style="background:#e74c3c;color:#fff">❌ غير مناسب</span>'
+    };
+
+    const fileBtn = m.file_url
+      ? `<a href="${resolveMediaUrl(m.file_url)}" target="_blank" rel="noopener" class="btn-save" style="font-size:0.75rem;padding:0.25rem 0.5rem;background:#1B6CA8;text-decoration:none;display:inline-flex;align-items:center;gap:0.2rem">📥 تحميل الملف</a>`
+      : '<span style="color:var(--text-muted);font-size:0.75rem">لا يوجد ملف</span>';
+
+    return `
+    <tr>
+      <td><strong style="color:var(--gold)">#${m.id}</strong></td>
+      <td style="font-size:0.85rem">${dateStr}</td>
+      <td>
+        <div style="font-weight:bold;color:var(--text-light)">${escHtml(m.author_name)}</div>
+        <div style="font-size:0.78rem;color:var(--text-muted)">${escHtml(m.wilaya || '—')}</div>
+        <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.25rem">
+          <a href="tel:${escHtml(m.author_phone)}" style="color:var(--gold);font-size:0.82rem;text-decoration:none">📞 ${escHtml(m.author_phone)}</a>
+          <a href="https://wa.me/${waPhone}?text=${encodeURIComponent(`مرحباً أستاذ ${m.author_name}، بخصوص طلب نشر مخطوطتك (${m.book_title}) لدى دار علي بن زيد للنشر:`)}" target="_blank" rel="noopener" style="background:#25D366;color:#fff;border-radius:4px;padding:2px 6px;font-size:0.75rem;text-decoration:none">واتساب</a>
+        </div>
+      </td>
+      <td>
+        <div style="font-weight:bold;color:var(--gold)">${escHtml(m.book_title)}</div>
+        <div style="font-size:0.8rem;color:var(--text-muted)">مجال: ${escHtml(m.category || 'عام')}</div>
+      </td>
+      <td>
+        <div style="font-size:0.82rem;max-width:240px;line-height:1.4;margin-bottom:0.4rem;color:var(--text-light)">${escHtml(m.summary || 'بدون ملخص')}</div>
+        ${fileBtn}
+      </td>
+      <td>${statusBadgeMap[m.status] || m.status}</td>
+      <td>
+        <div class="action-btns" style="display:flex;gap:0.4rem">
+          <button class="btn-edit" onclick="openManuscriptDrawer(${m.id})" title="مراجعة المخطوطة وتحديث الحالة">✏️ مراجعة</button>
+          <button class="btn-del" onclick="deleteManuscript(${m.id})" title="حذف الطلب">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.openManuscriptDrawer = function(id) {
+  const m = adminManuscripts.find(x => x.id === id);
+  if (!m) return;
+
+  document.getElementById('manuEditId').value = m.id;
+  document.getElementById('manuStatusSelect').value = m.status || 'pending';
+  document.getElementById('manuAdminNotes').value = m.admin_notes || '';
+
+  const prev = document.getElementById('manuDetailsPreview');
+  if (prev) {
+    prev.innerHTML = `
+      <div style="margin-bottom:0.4rem"><strong style="color:var(--gold)">عنوان العمل:</strong> ${escHtml(m.book_title)}</div>
+      <div style="margin-bottom:0.4rem"><strong>المؤلف:</strong> ${escHtml(m.author_name)} (${escHtml(m.author_phone)})</div>
+      <div style="margin-bottom:0.4rem"><strong>التصنيف:</strong> ${escHtml(m.category || 'عام')} | <strong>الولاية:</strong> ${escHtml(m.wilaya || '—')}</div>
+      ${m.summary ? `<div style="margin-top:0.4rem;color:var(--text-muted);font-size:0.85rem"><strong>الملخص:</strong> ${escHtml(m.summary)}</div>` : ''}
+    `;
+  }
+
+  document.getElementById('manuDrawer').classList.add('open');
+  document.getElementById('manuDrawerOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+};
+
+function closeManuscriptDrawer() {
+  document.getElementById('manuDrawer')?.classList.remove('open');
+  document.getElementById('manuDrawerOverlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+window.deleteManuscript = function(id) {
+  confirmDialog('هل أنت متأكد من حذف طلب النشر هذا نهائياً؟', async () => {
+    try {
+      await api.del(`/api/manuscripts/${id}`);
+      toast('تم حذف طلب النشر بنجاح');
+      await renderManuscriptsSection();
+      await updateUnreadBadge();
+    } catch {
+      toast('تعذّر حذف طلب النشر', 'error');
+    }
+  });
+};
+
+function initManuscriptsSection() {
+  document.querySelectorAll('#sec-manuscripts .filter-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sec-manuscripts .filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      manuFilterStatus = btn.dataset.manuStatus || 'all';
+      renderManuscriptsSection();
+    });
+  });
+
+  document.getElementById('manuSearch')?.addEventListener('input', e => {
+    manuSearchQuery = e.target.value;
+    renderManuscriptsSection();
+  });
+
+  document.getElementById('manuDrawerClose')?.addEventListener('click', closeManuscriptDrawer);
+  document.getElementById('manuDrawerCancel')?.addEventListener('click', closeManuscriptDrawer);
+  document.getElementById('manuDrawerOverlay')?.addEventListener('click', closeManuscriptDrawer);
+
+  document.getElementById('btnSaveManuStatus')?.addEventListener('click', async () => {
+    const id = document.getElementById('manuEditId')?.value;
+    const status = document.getElementById('manuStatusSelect')?.value;
+    const admin_notes = document.getElementById('manuAdminNotes')?.value.trim();
+
+    if (!id) return;
+    const btn = document.getElementById('btnSaveManuStatus');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ الحفظ...';
+
+    try {
+      await api.put(`/api/manuscripts/${id}/status`, { status, admin_notes });
+      toast('تم تحديث حالة المخطوطة والملاحظات بنجاح ✅');
+      closeManuscriptDrawer();
+      await renderManuscriptsSection();
+      await updateUnreadBadge();
+    } catch (err) {
+      toast('تعذّر حفظ التحديث: ' + (err.message || ''), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 حفظ التحديث';
+    }
+  });
+}
+
+// ─── SECTION: REVIEWS (تقييمات ومراجعات الكتب) ──────────────────────────────
+let adminReviews = [];
+let reviewFilterStatus = 'all';
+let reviewSearchQuery = '';
+
+async function renderReviewsSection() {
+  const tbody = document.getElementById('reviewsTbody');
+  if (!tbody) return;
+
+  try {
+    const data = await api.get('/api/admin/reviews');
+    adminReviews = Array.isArray(data) ? data : [];
+  } catch {
+    adminReviews = [];
+  }
+
+  const filtered = adminReviews.filter(r => {
+    let matchStatus = true;
+    if (reviewFilterStatus === 'pending') matchStatus = (r.is_approved === 0 || r.is_approved === false);
+    if (reviewFilterStatus === 'approved') matchStatus = (r.is_approved === 1 || r.is_approved === true);
+
+    const q = reviewSearchQuery.toLowerCase().trim();
+    const matchSearch = !q ||
+      (r.reviewer_name && r.reviewer_name.toLowerCase().includes(q)) ||
+      (r.book_title && r.book_title.toLowerCase().includes(q)) ||
+      (r.comment && r.comment.toLowerCase().includes(q));
+
+    return matchStatus && matchSearch;
+  });
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:2.5rem">لا توجد مراجعات مطابقة</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(r => {
+    const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-DZ') : '—';
+    const stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
+    const isApproved = (r.is_approved === 1 || r.is_approved === true);
+
+    return `
+    <tr>
+      <td><strong style="color:var(--gold)">#${r.id}</strong></td>
+      <td style="font-size:0.85rem">${dateStr}</td>
+      <td><strong style="color:var(--text-light)">${escHtml(r.book_title || 'كتاب')}</strong></td>
+      <td><strong>${escHtml(r.reviewer_name)}</strong></td>
+      <td><span style="color:#f1c40f;font-size:1.1rem;letter-spacing:2px">${stars}</span> (${r.rating}/5)</td>
+      <td><div style="max-width:280px;font-size:0.88rem;line-height:1.4;color:var(--text-light)">${escHtml(r.comment || '—')}</div></td>
+      <td>
+        <span class="status-badge ${isApproved ? 'status-published' : 'status-draft'}">
+          ${isApproved ? 'منشور بالموقع ✅' : 'بانتظار الموافقة ⏳'}
+        </span>
+      </td>
+      <td>
+        <div class="action-btns" style="display:flex;gap:0.4rem">
+          <button class="btn-save" onclick="toggleReviewApproval(${r.id}, ${isApproved ? 0 : 1})" style="padding:0.35rem 0.7rem;font-size:0.8rem;background:${isApproved ? '#e67e22' : '#27ae60'};border-color:${isApproved ? '#e67e22' : '#27ae60'}">
+            ${isApproved ? 'إلغاء النشر 🚫' : 'موافقة ونشر ✅'}
+          </button>
+          <button class="btn-del" onclick="deleteReview(${r.id})" title="حذف المراجعة">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.toggleReviewApproval = async function(id, newStatus) {
+  try {
+    await api.put(`/api/admin/reviews/${id}/approve`, { is_approved: newStatus });
+    toast(newStatus ? 'تمت الموافقة ونشر المراجعة على الكتاب بنجاح ✅' : 'تم إلغاء نشر المراجعة');
+    await renderReviewsSection();
+    await updateUnreadBadge();
+  } catch (err) {
+    toast('تعذّر تعديل حالة المراجعة: ' + (err.message || ''), 'error');
+  }
+};
+
+window.deleteReview = function(id) {
+  confirmDialog('هل أنت متأكد من حذف هذه المراجعة نهائياً؟', async () => {
+    try {
+      await api.del(`/api/admin/reviews/${id}`);
+      toast('تم حذف المراجعة بنجاح');
+      await renderReviewsSection();
+      await updateUnreadBadge();
+    } catch {
+      toast('تعذّر حذف المراجعة', 'error');
+    }
+  });
+};
+
+function initReviewsSection() {
+  document.querySelectorAll('#sec-reviews .filter-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#sec-reviews .filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      reviewFilterStatus = btn.dataset.reviewStatus || 'all';
+      renderReviewsSection();
+    });
+  });
+
+  document.getElementById('reviewsSearch')?.addEventListener('input', e => {
+    reviewSearchQuery = e.target.value;
+    renderReviewsSection();
+  });
+}
+
+// ─── AUDIO CHIME & LIVE POLLING ENGINE ───────────────────────────────────────
+let soundEnabled = localStorage.getItem('dar_admin_sound') !== '0';
+let lastKnownPendingOrders = -1;
+
+function initSoundToggle() {
+  const btn = document.getElementById('btnSoundToggle');
+  const icon = document.getElementById('soundIcon');
+  const text = document.getElementById('soundText');
+
+  function updateSoundBtn() {
+    if (icon) icon.textContent = soundEnabled ? '🔔' : '🔕';
+    if (text) text.textContent = soundEnabled ? 'صوت التنبيه: مفعّل' : 'صوت التنبيه: مكتوم';
+    if (btn) {
+      btn.style.color = soundEnabled ? 'var(--gold)' : 'var(--text-muted)';
+      btn.style.borderColor = soundEnabled ? 'var(--gold)' : 'var(--border)';
+    }
+  }
+  updateSoundBtn();
+
+  btn?.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('dar_admin_sound', soundEnabled ? '1' : '0');
+    updateSoundBtn();
+    if (soundEnabled) {
+      playNewOrderChime();
+      toast('تم تفعيل صوت التنبيه للطلبات الجديدة 🔔');
+    } else {
+      toast('تم كتم صوت التنبيه 🔕');
+    }
+  });
+}
+
+function playNewOrderChime() {
+  if (!soundEnabled) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+
+    const playTone = (freq, start, duration) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + duration);
+    };
+
+    // Golden two-tone notification chime (F5 -> A5)
+    playTone(698.46, 0, 0.25);
+    playTone(880.00, 0.15, 0.45);
+  } catch { /* AudioContext blocked or unsupported */ }
+}
+
+function startLivePolling() {
+  setInterval(async () => {
+    if (sessionStorage.getItem('dar_admin_session') !== 'true') return;
+    try {
+      const stats = await api.get('/api/orders/stats');
+      const pending = Number(stats?.pending || 0);
+
+      if (lastKnownPendingOrders !== -1 && pending > lastKnownPendingOrders) {
+        playNewOrderChime();
+        toast(`🔔 وصل طلب كتاب جديد! (${pending} بانتظار التأكيد)`);
+        if (currentSection === 'orders') renderOrdersSection();
+        if (currentSection === 'dashboard') renderDashboard();
+      }
+      lastKnownPendingOrders = pending;
+      updateUnreadBadge();
+    } catch { /* silent */ }
+  }, 20000); // Check every 20 seconds
+}
+
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
   initSidebar();
+  initSoundToggle();
+  startLivePolling();
   initOrdersSection();
+  initManuscriptsSection();
   initBooksSection();
   initCategoriesSection();
+  initReviewsSection();
   initCouponsSection();
   initDeliverySection();
   initStaffSection();
@@ -1754,4 +2165,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initContactSection();
   initSettingsSection();
 });
+
 

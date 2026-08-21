@@ -4,6 +4,13 @@ import { ALGERIA_WILAYAS } from './algeria_cities.js';
 // ─── STATE ────────────────────────────────────────────────────────────────────
 let allBooks      = [];
 let allCategories = [];
+let cart = [];
+try {
+  cart = JSON.parse(localStorage.getItem('dar_cart') || '[]');
+  if (!Array.isArray(cart)) cart = [];
+} catch {
+  cart = [];
+}
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 function escHtml(str) {
@@ -21,6 +28,198 @@ function toast(msg, type = 'success') {
   setTimeout(() => { t.classList.add('removing'); setTimeout(() => t.remove(), 300); }, 3000);
 }
 
+function resolveMediaUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  const apiBase = window.__API_BASE__ || 'https://daralibenzidweb.onrender.com';
+  return apiBase.replace(/\/+$/, '') + '/' + url.replace(/^\/+/, '');
+}
+
+// ─── ANNOUNCEMENT BAR ─────────────────────────────────────────────────────────
+function renderAnnouncement(s = {}) {
+  const bar = document.getElementById('announcementBar');
+  const textEl = document.getElementById('announcementText');
+  const linkEl = document.getElementById('announcementLink');
+  const closeBtn = document.getElementById('announcementClose');
+  if (!bar) return;
+
+  if (sessionStorage.getItem('dar_announcement_dismissed') === '1') {
+    bar.style.display = 'none';
+    return;
+  }
+
+  const isActive = s.announcement_active !== 0 && s.announcement_active !== '0';
+  const text = s.announcement_text || '📚 مرحباً بكم في دار علي بن زيد للنشر والتوزيع — شحن متوفر لجميع الـ 58 ولاية جزائرية! 🚚';
+
+  if (isActive && text) {
+    if (textEl) textEl.textContent = text;
+    if (linkEl) {
+      if (s.announcement_link) {
+        linkEl.href = s.announcement_link;
+        linkEl.style.display = 'inline-block';
+      } else {
+        linkEl.style.display = 'none';
+      }
+    }
+    bar.style.display = 'flex';
+  } else {
+    bar.style.display = 'none';
+  }
+
+  closeBtn?.addEventListener('click', () => {
+    bar.style.display = 'none';
+    sessionStorage.setItem('dar_announcement_dismissed', '1');
+  });
+}
+
+// ─── SHOPPING CART STATE & DRAWER ─────────────────────────────────────────────
+function saveCart() {
+  localStorage.setItem('dar_cart', JSON.stringify(cart));
+  updateCartBadges();
+  renderCartDrawer();
+}
+
+function updateCartBadges() {
+  const count = cart.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
+  const badge = document.getElementById('cartBadge');
+  const mobileBadge = document.getElementById('mobileCartBadge');
+  const drawerCount = document.getElementById('cartDrawerCountBadge');
+
+  if (badge) {
+    badge.textContent = count;
+    badge.classList.remove('bump');
+    void badge.offsetWidth; // trigger reflow
+    if (count > 0) badge.classList.add('bump');
+  }
+  if (mobileBadge) mobileBadge.textContent = count;
+  if (drawerCount) drawerCount.textContent = `${count} كتب`;
+}
+
+window.addToCart = function(bookId, qty = 1) {
+  const book = allBooks.find(b => b.id === bookId);
+  if (!book) return;
+
+  const price = Number(book.discount_price || book.price || 1200);
+  const existing = cart.find(i => i.bookId === bookId);
+
+  if (existing) {
+    existing.quantity = (existing.quantity || 1) + qty;
+  } else {
+    cart.push({
+      bookId: book.id,
+      title: book.title,
+      author: book.author,
+      price: price,
+      coverUrl: book.cover_url,
+      quantity: qty
+    });
+  }
+
+  saveCart();
+  toast(`🛒 تمت إضافة (${book.title}) إلى السلة بنجاح`);
+};
+
+window.removeFromCart = function(bookId) {
+  cart = cart.filter(i => i.bookId !== bookId);
+  saveCart();
+};
+
+window.changeCartQty = function(bookId, delta) {
+  const item = cart.find(i => i.bookId === bookId);
+  if (!item) return;
+
+  item.quantity = (item.quantity || 1) + delta;
+  if (item.quantity <= 0) {
+    cart = cart.filter(i => i.bookId !== bookId);
+  }
+  saveCart();
+};
+
+function renderCartDrawer() {
+  const body = document.getElementById('cartDrawerBody');
+  const subtotalEl = document.getElementById('cartSubtotalVal');
+  const checkoutBtn = document.getElementById('btnCartCheckout');
+  if (!body) return;
+
+  if (!cart.length) {
+    body.innerHTML = `
+      <div class="cart-empty-state">
+        <div class="cart-empty-icon">🛒</div>
+        <h3>سلة المشتريات فارغة</h3>
+        <p style="margin-top:0.4rem;font-size:0.88rem">تصفح إصداراتنا وأضف الكتب التي تود اقتناءها إلى السلة!</p>
+      </div>`;
+    if (subtotalEl) subtotalEl.textContent = '0 دج';
+    if (checkoutBtn) checkoutBtn.disabled = true;
+    return;
+  }
+
+  if (checkoutBtn) checkoutBtn.disabled = false;
+
+  let subtotal = 0;
+  body.innerHTML = cart.map(item => {
+    const itemTotal = item.price * (item.quantity || 1);
+    subtotal += itemTotal;
+    const coverPath = resolveMediaUrl(item.coverUrl);
+
+    return `
+      <div class="cart-item-card">
+        <div class="cart-item-thumb">
+          ${coverPath ? `<img src="${escHtml(coverPath)}" alt="${escHtml(item.title)}">` : '<div style="background:#1B6CA8;width:100%;height:100%;display:flex;align-items:center;justify-content:center">📖</div>'}
+        </div>
+        <div class="cart-item-info">
+          <div class="cart-item-title" title="${escHtml(item.title)}">${escHtml(item.title)}</div>
+          <div class="cart-item-price">${item.price} دج <small style="color:var(--text-muted)">(${itemTotal} دج)</small></div>
+          <div class="cart-item-stepper">
+            <button type="button" class="cart-step-btn" onclick="changeCartQty(${item.bookId}, -1)">-</button>
+            <span class="cart-step-qty">${item.quantity || 1}</span>
+            <button type="button" class="cart-step-btn" onclick="changeCartQty(${item.bookId}, 1)">+</button>
+          </div>
+        </div>
+        <button type="button" class="cart-item-del-btn" onclick="removeFromCart(${item.bookId})" title="حذف من السلة">🗑️</button>
+      </div>
+    `;
+  }).join('');
+
+  if (subtotalEl) subtotalEl.textContent = `${subtotal} دج`;
+}
+
+function openCartDrawer() {
+  renderCartDrawer();
+  document.getElementById('cartDrawer')?.classList.add('open');
+  document.getElementById('cartDrawerOverlay')?.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCartDrawer() {
+  document.getElementById('cartDrawer')?.classList.remove('open');
+  document.getElementById('cartDrawerOverlay')?.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function initCart() {
+  updateCartBadges();
+  document.getElementById('navCartBtn')?.addEventListener('click', openCartDrawer);
+  document.getElementById('mobileCartBtn')?.addEventListener('click', () => {
+    document.getElementById('mobileDrawer')?.classList.remove('open');
+    document.getElementById('overlayBg')?.classList.remove('show');
+    openCartDrawer();
+  });
+  document.getElementById('cartDrawerClose')?.addEventListener('click', closeCartDrawer);
+  document.getElementById('cartDrawerOverlay')?.addEventListener('click', closeCartDrawer);
+  document.getElementById('btnCartContinue')?.addEventListener('click', closeCartDrawer);
+
+  document.getElementById('btnCartCheckout')?.addEventListener('click', () => {
+    if (!cart.length) {
+      toast('السلة فارغة، يرجى إضافة كتب أولاً', 'error');
+      return;
+    }
+    closeCartDrawer();
+    openOrderModal(null); // Open checkout in multi-item cart mode
+  });
+}
+
 // ─── NAVBAR ───────────────────────────────────────────────────────────────────
 function initNavbar() {
   const navbar    = document.getElementById('navbar');
@@ -30,7 +229,7 @@ function initNavbar() {
   const drawerClose = document.getElementById('drawerClose');
 
   window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 50);
+    navbar?.classList.toggle('scrolled', window.scrollY > 50);
   });
 
   const openDrawer  = () => { drawer.classList.add('open'); overlayBg.classList.add('show'); document.body.style.overflow = 'hidden'; };
@@ -50,7 +249,7 @@ function initNavbar() {
   });
 }
 
-// ─── HERO ─────────────────────────────────────────────────────────────────────
+// ─── HERO & STATS ─────────────────────────────────────────────────────────────
 function renderHero(s = {}) {
   const h1  = document.getElementById('heroTitle');
   const sub = document.getElementById('heroSubtitle');
@@ -58,7 +257,6 @@ function renderHero(s = {}) {
   if (sub) sub.textContent = s.hero_subtitle || 'دار علي بن زيد للطباعة والنشر';
 }
 
-// ─── STATS ────────────────────────────────────────────────────────────────────
 function renderStats(s = {}) {
   [['statYears', s.stat_years || '20'], ['statBooks', s.stat_books || '150'], ['statReaders', s.stat_readers || '5000']]
     .forEach(([id, val]) => {
@@ -123,15 +321,6 @@ function filterBooks() {
   renderBooks(filtered);
 }
 
-function resolveMediaUrl(url) {
-  if (!url) return '';
-  if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-  const apiBase = window.__API_BASE__ || 'https://daralibenzidweb.onrender.com';
-  return apiBase.replace(/\/+$/, '') + '/' + url.replace(/^\/+/, '');
-}
-
 function renderBooks(books) {
   const grid = document.getElementById('booksGrid');
   if (!grid) return;
@@ -175,6 +364,7 @@ function renderBooks(books) {
         ${priceHtml}
         <div class="book-footer">
           <button class="btn-order-now" onclick="openOrderModal(${book.id})">🛍️ اطلب الآن</button>
+          <button class="btn-detail" onclick="addToCart(${book.id})" style="color:var(--gold);border-color:var(--gold)" title="إضافة إلى سلة المشتريات">🛒 للسلة</button>
           <button class="btn-detail" onclick="openBookModal(${book.id})">تفاصيل</button>
         </div>
       </div>
@@ -182,11 +372,14 @@ function renderBooks(books) {
   }).join('');
 }
 
-// ─── BOOK DETAILS MODAL ───────────────────────────────────────────────────────
-window.openBookModal = function(bookId) {
+// ─── BOOK DETAILS MODAL & REVIEWS ─────────────────────────────────────────────
+let activeModalBookId = null;
+
+window.openBookModal = async function(bookId) {
   const book = allBooks.find(b => b.id === bookId);
   if (!book) return;
 
+  activeModalBookId = book.id;
   const color     = getCatColor(book);
   const catName   = getCatName(book);
   const coverPath = resolveMediaUrl(book.cover_url);
@@ -236,19 +429,119 @@ window.openBookModal = function(bookId) {
       <button class="btn-modal-order" onclick="openOrderModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
         🛍️ اطلب نسختك الورقية الآن (الدفع عند الاستلام)
       </button>
+      <button class="btn-modal-order" style="background:rgba(201,168,76,0.15);border:1px solid var(--gold);color:var(--gold)" onclick="addToCart(${book.id}); document.getElementById('bookModal').classList.remove('open');">
+        🛒 أضف هذا الكتاب إلى السلة
+      </button>
       <button class="btn-modal-paypal" onclick="openPaypalModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
         💳 شراء نسخة PDF فوراً ($${pdfPrice})
       </button>
     `;
   }
 
+  // Load Reviews for this book
+  loadBookReviews(book.id);
+
   document.getElementById('bookModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 };
 
-// ─── ORDER CHECKOUT MODAL LOGIC ───────────────────────────────────────────────
+async function loadBookReviews(bookId) {
+  const listEl = document.getElementById('bookReviewsList');
+  const avgNum = document.getElementById('ratingAvgNum');
+  const avgStars = document.getElementById('ratingAvgStars');
+  const countText = document.getElementById('ratingCountText');
+  if (!listEl) return;
+
+  listEl.innerHTML = `<div style="text-align:center;padding:1rem;color:var(--text-muted)">جارٍ تحميل التقييمات...</div>`;
+
+  try {
+    const data = await api.get(`/api/books/${bookId}/reviews`);
+    const reviews = data.reviews || [];
+    const avg = Number(data.avg_rating || 5.0).toFixed(1);
+    const total = data.total_reviews || 0;
+
+    if (avgNum) avgNum.textContent = avg;
+    if (avgStars) avgStars.textContent = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+    if (countText) countText.textContent = `(${total} مراجعات)`;
+
+    if (!reviews.length) {
+      listEl.innerHTML = `<div class="empty-reviews">لا توجد مراجعات معتمدة بعد. كن أول من يكتب مراجعة لهذا الكتاب!</div>`;
+      return;
+    }
+
+    listEl.innerHTML = reviews.map(r => {
+      const stars = '★'.repeat(r.rating || 5) + '☆'.repeat(5 - (r.rating || 5));
+      const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('ar-DZ') : '';
+      return `
+        <div class="review-item">
+          <div class="review-top">
+            <span class="reviewer-name">👤 ${escHtml(r.reviewer_name)}</span>
+            <div>
+              <span class="review-stars">${stars}</span>
+              <span class="review-date">${dateStr}</span>
+            </div>
+          </div>
+          <p class="review-comment">${escHtml(r.comment || '')}</p>
+        </div>
+      `;
+    }).join('');
+  } catch {
+    listEl.innerHTML = `<div class="empty-reviews">كن أول من يكتب مراجعة لهذا الكتاب!</div>`;
+  }
+}
+
+function initReviews() {
+  const starBtns = document.querySelectorAll('#starIcons .star-btn');
+  const ratingIn = document.getElementById('reviewRatingInput');
+
+  starBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = Number(btn.dataset.val);
+      if (ratingIn) ratingIn.value = val;
+      starBtns.forEach(b => {
+        b.classList.toggle('active', Number(b.dataset.val) <= val);
+      });
+    });
+  });
+
+  document.getElementById('addReviewForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!activeModalBookId) return;
+
+    const name = document.getElementById('reviewNameInput')?.value.trim();
+    const comment = document.getElementById('reviewCommentInput')?.value.trim();
+    const rating = Number(ratingIn?.value || 5);
+
+    if (!name) {
+      toast('يرجى كتابة اسمك الكريم', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmitReview');
+    if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الإرسال...'; }
+
+    try {
+      await api.post(`/api/books/${activeModalBookId}/reviews`, {
+        reviewer_name: name,
+        rating,
+        comment
+      });
+      toast('شكراً لتقييمك! ستتم مراجعة التقييم واعتماده قريباً ✨');
+      document.getElementById('addReviewForm').reset();
+      if (ratingIn) ratingIn.value = 5;
+      starBtns.forEach(b => b.classList.add('active'));
+    } catch (err) {
+      toast('تعذّر إرسال التقييم: ' + (err.message || ''), 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'إرسال التقييم ✨'; }
+    }
+  });
+}
+
+// ─── ORDER CHECKOUT MODAL LOGIC (Single Book or Cart Checkout) ────────────────
 let cachedDeliveryRates = [];
 let activeOrderBook = null;
+let isCartCheckoutMode = false;
 let orderQty = 1;
 let appliedDiscount = 0;
 let appliedCouponCode = '';
@@ -263,33 +556,72 @@ async function loadDeliveryRates(forceRefresh = false) {
   return cachedDeliveryRates;
 }
 
-window.openOrderModal = async function(bookId) {
-  const book = allBooks.find(b => b.id === bookId);
-  if (!book) return;
-
-  activeOrderBook = book;
-  orderQty = 1;
+window.openOrderModal = async function(bookId = null) {
+  const summaryContainer = document.getElementById('orderBookSummaryContainer');
   appliedDiscount = 0;
   appliedCouponCode = '';
 
-  document.getElementById('orderBookId').value = book.id;
-  document.getElementById('orderBookTitle').textContent = book.title;
-  document.getElementById('orderBookAuthor').textContent = '✍️ ' + book.author;
-  document.getElementById('orderQtyInput').value = '1';
+  if (bookId) {
+    // Single Book Checkout Mode
+    isCartCheckoutMode = false;
+    const book = allBooks.find(b => b.id === bookId);
+    if (!book) return;
+    activeOrderBook = book;
+    orderQty = 1;
 
-  const price = Number(book.discount_price || book.price || 1200);
-  document.getElementById('orderBookPriceTag').textContent = `${price} دج / للنسخة`;
+    document.getElementById('orderModalBadge').textContent = '🛍️ طلب شراء كتاب';
+    document.getElementById('orderBookId').value = book.id;
 
-  const coverPath = resolveMediaUrl(book.cover_url);
-  const coverEl = document.getElementById('orderBookCover');
-  if (coverPath) {
-    coverEl.innerHTML = `<img src="${escHtml(coverPath)}" alt="${escHtml(book.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    const price = Number(book.discount_price || book.price || 1200);
+    const coverPath = resolveMediaUrl(book.cover_url);
+
+    summaryContainer.innerHTML = `
+      <div class="order-book-thumb">
+        ${coverPath ? `<img src="${escHtml(coverPath)}" alt="${escHtml(book.title)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">` : '<div style="background:#1B6CA8;width:100%;height:100%;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.8rem">📖</div>'}
+      </div>
+      <div class="order-book-details">
+        <h3 class="order-book-name">${escHtml(book.title)}</h3>
+        <p class="order-book-author">✍️ ${escHtml(book.author)}</p>
+        <div class="order-book-price">${price} دج / للنسخة</div>
+        <div class="order-qty-stepper">
+          <span class="qty-label">الكمية:</span>
+          <button type="button" class="btn-qty" id="btnQtyMinus">-</button>
+          <input type="number" id="orderQtyInput" value="1" min="1" max="20" readonly />
+          <button type="button" class="btn-qty" id="btnQtyPlus">+</button>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('btnQtyMinus')?.addEventListener('click', () => {
+      if (orderQty > 1) { orderQty--; document.getElementById('orderQtyInput').value = orderQty; updateOrderCalculation(); }
+    });
+    document.getElementById('btnQtyPlus')?.addEventListener('click', () => {
+      if (orderQty < 20) { orderQty++; document.getElementById('orderQtyInput').value = orderQty; updateOrderCalculation(); }
+    });
   } else {
-    const color = getCatColor(book);
-    coverEl.innerHTML = `<div style="width:100%;height:100%;background:${color};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.8rem">📖</div>`;
+    // Multi-Item Cart Checkout Mode
+    isCartCheckoutMode = true;
+    activeOrderBook = null;
+
+    document.getElementById('orderModalBadge').textContent = `🛒 إتمام طلب السلة (${cart.length} كتب)`;
+    document.getElementById('orderBookId').value = '';
+
+    const itemsPreview = cart.map(i => `
+      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);padding:0.4rem 0.6rem;border-radius:5px;font-size:0.85rem">
+        <span style="font-weight:bold;color:var(--text-light)">${escHtml(i.title)} <small style="color:var(--gold)">(×${i.quantity || 1})</small></span>
+        <span style="color:var(--gold)">${i.price * (i.quantity || 1)} دج</span>
+      </div>
+    `).join('');
+
+    summaryContainer.innerHTML = `
+      <div style="width:100%;display:flex;flex-direction:column;gap:0.4rem">
+        <div style="font-weight:700;color:var(--gold);margin-bottom:0.2rem">📚 محتويات سلة مشترياتك:</div>
+        ${itemsPreview}
+      </div>
+    `;
   }
 
-  // Load Wilayas (Only available ones)
+  // Load Wilayas (Filtered by is_available = 1)
   const rates = await loadDeliveryRates(true);
   const availableRates = rates.filter(w => Number(w.is_available) === 1);
   const wilayaSelect = document.getElementById('orderWilayaSelect');
@@ -344,10 +676,13 @@ function onWilayaChanged() {
 }
 
 function updateOrderCalculation() {
-  if (!activeOrderBook) return;
-
-  const unitPrice = Number(activeOrderBook.discount_price || activeOrderBook.price || 1200);
-  const subtotal = unitPrice * orderQty;
+  let subtotal = 0;
+  if (isCartCheckoutMode) {
+    subtotal = cart.reduce((sum, i) => sum + (i.price * (i.quantity || 1)), 0);
+  } else if (activeOrderBook) {
+    const unitPrice = Number(activeOrderBook.discount_price || activeOrderBook.price || 1200);
+    subtotal = unitPrice * orderQty;
+  }
 
   const wilayaSelect = document.getElementById('orderWilayaSelect');
   const selectedOpt = wilayaSelect?.options[wilayaSelect.selectedIndex];
@@ -365,9 +700,13 @@ function updateOrderCalculation() {
 
   const total = Math.max(0, subtotal + shippingFee - appliedDiscount);
 
-  document.getElementById('calcQty').textContent = orderQty;
-  document.getElementById('calcSubtotal').textContent = `${subtotal} دج`;
-  document.getElementById('calcShipping').textContent = shippingFee > 0 ? `${shippingFee} دج` : 'اختر الولاية لحساب التوصيل';
+  const bookPriceLabel = document.getElementById('calcBookPriceLabel');
+  if (bookPriceLabel) {
+    bookPriceLabel.textContent = isCartCheckoutMode ? `سعر الكتب (${cart.length} كتب):` : `سعر الكتاب (×${orderQty}):`;
+  }
+
+  document.getElementById('calcBookPrice').textContent = `${subtotal} دج`;
+  document.getElementById('calcDeliveryPrice').textContent = shippingFee > 0 ? `${shippingFee} دج` : 'اختر الولاية لحساب التوصيل';
   document.getElementById('calcTotal').textContent = `${total} دج`;
 
   if (appliedDiscount > 0) {
@@ -389,7 +728,6 @@ window.openPaypalModal = function(bookId) {
 
   const directLink = document.getElementById('paypalDirectLink');
   if (directLink) {
-    // Standard PayPal.Me or checkout link
     directLink.href = `https://www.paypal.com/paypalme/daralibenzid/${price}`;
   }
 
@@ -397,7 +735,7 @@ window.openPaypalModal = function(bookId) {
   document.body.style.overflow = 'hidden';
 };
 
-function initModal() {
+function initModalsAndOrder() {
   // Book Details Modal
   const bookOverlay = document.getElementById('bookModal');
   const bookClose   = document.getElementById('modalClose');
@@ -426,22 +764,12 @@ function initModal() {
   successClose?.addEventListener('click', closeSuccess);
   successOverlay?.addEventListener('click', e => { if (e.target === successOverlay) closeSuccess(); });
 
-  // Quantity Stepper
-  document.getElementById('btnQtyMinus')?.addEventListener('click', () => {
-    if (orderQty > 1) {
-      orderQty--;
-      document.getElementById('orderQtyInput').value = orderQty;
-      updateOrderCalculation();
-    }
-  });
-
-  document.getElementById('btnQtyPlus')?.addEventListener('click', () => {
-    if (orderQty < 20) {
-      orderQty++;
-      document.getElementById('orderQtyInput').value = orderQty;
-      updateOrderCalculation();
-    }
-  });
+  // Manuscript Success Modal
+  const manuSuccessOverlay = document.getElementById('manuscriptSuccessModal');
+  const manuSuccessClose   = document.getElementById('btnManuSuccessClose');
+  const closeManuSuccess   = () => { manuSuccessOverlay?.classList.remove('open'); document.body.style.overflow = ''; };
+  manuSuccessClose?.addEventListener('click', closeManuSuccess);
+  manuSuccessOverlay?.addEventListener('click', e => { if (e.target === manuSuccessOverlay) closeManuSuccess(); });
 
   // Wilaya and Delivery Type change listeners
   document.getElementById('orderWilayaSelect')?.addEventListener('change', onWilayaChanged);
@@ -450,10 +778,7 @@ function initModal() {
   document.getElementById('orderCommuneSelect')?.addEventListener('change', e => {
     const customInput = document.getElementById('orderCommuneCustom');
     if (e.target.value === '__CUSTOM__') {
-      if (customInput) {
-        customInput.style.display = 'block';
-        customInput.focus();
-      }
+      if (customInput) { customInput.style.display = 'block'; customInput.focus(); }
     } else {
       if (customInput) customInput.style.display = 'none';
     }
@@ -475,8 +800,13 @@ function initModal() {
       if (statusMsg) statusMsg.innerHTML = `<span style="color:var(--danger)">يرجى كتابة كود الخصم أولاً</span>`;
       return;
     }
-    const unitPrice = Number(activeOrderBook?.discount_price || activeOrderBook?.price || 1200);
-    const subtotal = unitPrice * orderQty;
+    let subtotal = 0;
+    if (isCartCheckoutMode) {
+      subtotal = cart.reduce((sum, i) => sum + (i.price * (i.quantity || 1)), 0);
+    } else {
+      const unitPrice = Number(activeOrderBook?.discount_price || activeOrderBook?.price || 1200);
+      subtotal = unitPrice * orderQty;
+    }
 
     if (statusMsg) statusMsg.innerHTML = `<span>جارٍ التحقق من الكود...</span>`;
     try {
@@ -510,10 +840,11 @@ function initModal() {
     const communeCustomVal = document.getElementById('orderCommuneCustom')?.value.trim();
     const commune = (communeSelectVal === '__CUSTOM__' ? communeCustomVal : communeSelectVal) || '';
     const address = document.getElementById('orderAddress')?.value.trim();
+    const notes   = document.getElementById('orderNotes')?.value.trim();
     const deliveryType = document.querySelector('input[name="orderDeliveryType"]:checked')?.value || 'home';
 
     if (!name || !phone || !wilaya || !commune || !address) {
-      alert('يرجى ملء جميع الحقول المطلوبة (الاسم، الهاتف، الولاية، البلدية، والعنوان)');
+      toast('يرجى ملء جميع الحقول المطلوبة (الاسم، الهاتف، الولاية، البلدية، والعنوان)', 'error');
       return;
     }
 
@@ -522,33 +853,142 @@ function initModal() {
 
     try {
       const payload = {
-        book_id: activeOrderBook.id,
         customer_name: name,
         customer_phone: phone,
         wilaya_code: Number(wilaya),
         commune,
         address,
+        notes: notes || null,
         delivery_type: deliveryType,
-        quantity: orderQty,
         coupon_code: appliedCouponCode || null,
         payment_method: 'cod'
       };
 
+      if (isCartCheckoutMode) {
+        payload.items = cart.map(i => ({
+          book_id: i.bookId,
+          title: i.title,
+          price: i.price,
+          quantity: i.quantity || 1,
+          cover_url: i.coverUrl
+        }));
+      } else {
+        payload.book_id = activeOrderBook.id;
+        payload.quantity = orderQty;
+      }
+
       const result = await api.post('/api/orders', payload);
       closeOrder();
 
+      if (isCartCheckoutMode) {
+        cart = [];
+        saveCart();
+      }
+
       // Populate & open success modal
       document.getElementById('successOrderId').textContent = `#${result.order?.id || 'OK'}`;
-      document.getElementById('successBookTitle').textContent = activeOrderBook.title;
+      document.getElementById('successBookTitle').textContent = result.order?.book_title || (isCartCheckoutMode ? 'مجموعة كتب' : activeOrderBook.title);
       document.getElementById('successWilaya').textContent = result.order?.wilaya_name || `ولاية ${wilaya}`;
       document.getElementById('successTotal').textContent = `${result.order?.total_price || 0} دج`;
 
       document.getElementById('orderSuccessModal').classList.add('open');
       document.body.style.overflow = 'hidden';
     } catch (err) {
-      alert('تعذّر إرسال الطلب: ' + (err.message || 'يرجى المحاولة مرة أخرى'));
+      toast('تعذّر إرسال الطلب: ' + (err.message || 'يرجى المحاولة مرة أخرى'), 'error');
     } finally {
       if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '🛍️ تأكيد الطلب والدفع عند الاستلام'; }
+    }
+  });
+}
+
+// ─── MANUSCRIPT SUBMISSION (انشر كتابك معنا) ──────────────────────────────────
+let selectedManuscriptFile = null;
+
+function initManuscriptSection() {
+  const wilayaSelect = document.getElementById('manuWilaya');
+  if (wilayaSelect) {
+    wilayaSelect.innerHTML = `<option value="">-- اختر ولايتك --</option>` +
+      ALGERIA_WILAYAS.map(w => `<option value="${w.code}. ${escHtml(w.name)}">${w.code}. ${escHtml(w.name)}</option>`).join('');
+  }
+
+  const fileInput = document.getElementById('manuFileInput');
+  const fileNameDisplay = document.getElementById('manuFileName');
+
+  fileInput?.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 35 * 1024 * 1024) {
+        toast('حجم الملف كبير جداً (الحد الأقصى 35 ميغابايت)', 'error');
+        fileInput.value = '';
+        return;
+      }
+      selectedManuscriptFile = file;
+      if (fileNameDisplay) fileNameDisplay.innerHTML = `<strong style="color:var(--gold)">📄 تم اختيار: ${escHtml(file.name)} (${(file.size / 1024 / 1024).toFixed(2)} MB)</strong>`;
+    }
+  });
+
+  document.getElementById('manuscriptForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const authorName  = document.getElementById('manuAuthorName')?.value.trim();
+    const authorPhone = document.getElementById('manuAuthorPhone')?.value.trim();
+    const authorEmail = document.getElementById('manuAuthorEmail')?.value.trim();
+    const wilaya      = document.getElementById('manuWilaya')?.value;
+    const bookTitle   = document.getElementById('manuBookTitle')?.value.trim();
+    const category    = document.getElementById('manuCategory')?.value;
+    const summary     = document.getElementById('manuSummary')?.value.trim();
+
+    if (!authorName || !authorPhone || !bookTitle) {
+      toast('يرجى ملء الحقول الإلزامية: اسم المؤلف، رقم الهاتف، وعنوان الكتاب', 'error');
+      return;
+    }
+
+    if (!selectedManuscriptFile) {
+      toast('يرجى إرفاق ملف المخطوطة أو الفهرس', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmitManuscript');
+    if (btn) { btn.disabled = true; btn.textContent = 'جارٍ رفع المخطوطة وإرسال الطلب...'; }
+
+    try {
+      // 1. Convert file to Base64 and upload
+      const reader = new FileReader();
+      reader.readAsDataURL(selectedManuscriptFile);
+      await new Promise((resolve, reject) => {
+        reader.onload = resolve;
+        reader.onerror = reject;
+      });
+
+      let fileUrl = '';
+      try {
+        const uploadRes = await api.post('/api/upload', { file: reader.result });
+        fileUrl = uploadRes.url || uploadRes.pdf_url || '';
+      } catch {
+        fileUrl = '';
+      }
+
+      // 2. Submit manuscript
+      await api.post('/api/manuscripts', {
+        author_name: authorName,
+        author_phone: authorPhone,
+        author_email: authorEmail || null,
+        wilaya: wilaya || null,
+        book_title: bookTitle,
+        category: category || null,
+        summary: summary || null,
+        file_url: fileUrl
+      });
+
+      document.getElementById('manuscriptForm').reset();
+      selectedManuscriptFile = null;
+      if (fileNameDisplay) fileNameDisplay.textContent = 'اضغط هنا لاختيار ملف المخطوطة من جهازك';
+
+      document.getElementById('manuscriptSuccessModal')?.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    } catch (err) {
+      toast('تعذّر إرسال طلب النشر: ' + (err.message || ''), 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '📤 إرسال طلب النشر للمراجعة'; }
     }
   });
 }
@@ -618,9 +1058,15 @@ function renderContact(info = {}) {
   const fbBtn = document.getElementById('socialFb');
   const igBtn = document.getElementById('socialIg');
   const waBtn = document.getElementById('socialWa');
+  const floatingWa = document.getElementById('whatsappWidget');
+
+  const waNum = String(info.whatsapp || info.phone || '213770921426').replace(/\D/g,'');
   if (fbBtn && info.facebook)  { fbBtn.href = info.facebook; fbBtn.style.display = 'flex'; }
   if (igBtn && info.instagram) { igBtn.href = info.instagram; igBtn.style.display = 'flex'; }
-  if (waBtn && info.whatsapp)  { waBtn.href = `https://wa.me/${String(info.whatsapp).replace(/\D/g,'')}`; waBtn.style.display = 'flex'; }
+  if (waBtn && info.whatsapp)  { waBtn.href = `https://wa.me/${waNum}`; waBtn.style.display = 'flex'; }
+  if (floatingWa) {
+    floatingWa.href = `https://wa.me/${waNum}?text=${encodeURIComponent('مرحباً دار علي بن زيد، أود الاستفسار بخصوص...')}`;
+  }
 }
 
 function initContactForm() {
@@ -691,7 +1137,10 @@ function showLoading(show) {
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   initNavbar();
-  initModal();
+  initCart();
+  initModalsAndOrder();
+  initReviews();
+  initManuscriptSection();
   initContactForm();
   initScrollAnimations();
 
@@ -719,6 +1168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const contactData  = contact  && typeof contact  === 'object' ? contact  : {};
   const settingsData = settings && typeof settings === 'object' ? settings : {};
 
+  renderAnnouncement(settingsData);
   renderHero(settingsData);
   renderStats(settingsData);
   renderFilterTabs(allCategories);

@@ -28,6 +28,78 @@ router.get("/orders/stats", async (_req, res) => {
   }
 });
 
+// GET /orders/export - Export orders to Excel/CSV with UTF-8 BOM (Admin)
+router.get("/orders/export", async (req, res) => {
+  try {
+    const { status } = req.query;
+    let sql = "SELECT * FROM orders WHERE 1=1";
+    const params = [];
+
+    if (status && status !== "all") {
+      sql += " AND status = ?";
+      params.push(status);
+    }
+    sql += " ORDER BY id DESC";
+
+    const rows = await query(sql, params);
+
+    const statusMap = {
+      pending: "قيد الانتظار",
+      confirmed: "مؤكد",
+      shipped: "تم الشحن",
+      delivered: "تم التوصيل",
+      cancelled: "ملغي"
+    };
+
+    const deliveryMap = {
+      home: "توصيل للمنزل",
+      desk: "استلام من المكتب"
+    };
+
+    let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Arabic compatibility
+    csvContent += "رقم الطلب,تاريخ الطلب,اسم العميل,رقم الهاتف,الولاية,البلدية,العنوان التفصيلي,نوع التوصيل,تفاصيل الكتب,سعر الكتب (دج),تكلفة التوصيل (دج),قيمة الخصم (دج),كود الخصم,المجموع الإجمالي (دج),حالة الطلب,ملاحظات\n";
+
+    rows.forEach(o => {
+      const dateStr = o.created_at ? new Date(o.created_at).toISOString().split("T")[0] : "";
+      const customer = `"${(o.customer_name || "").replace(/"/g, '""')}"`;
+      const phone = `"${(o.customer_phone || "").replace(/"/g, '""')}"`;
+      const wilaya = `"${(o.wilaya_name || "").replace(/"/g, '""')}"`;
+      const commune = `"${(o.commune || "").replace(/"/g, '""')}"`;
+      const address = `"${(o.address || "").replace(/"/g, '""')}"`;
+      const delivery = `"${deliveryMap[o.delivery_type] || o.delivery_type}"`;
+      
+      let booksDesc = o.book_title || "";
+      if (o.items) {
+        try {
+          const parsed = JSON.parse(o.items);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            booksDesc = parsed.map(i => `${i.title || i.book_title} (×${i.quantity || 1})`).join(" + ");
+          }
+        } catch { /* use default */ }
+      }
+      const booksCol = `"${booksDesc.replace(/"/g, '""')}"`;
+
+      const bookPrice = Number(o.book_price || 0);
+      const deliveryPrice = Number(o.delivery_price || 0);
+      const discount = Number(o.discount_amount || 0);
+      const coupon = o.coupon_code ? `"${o.coupon_code}"` : '""';
+      const total = Number(o.total_price || 0);
+      const st = `"${statusMap[o.status] || o.status}"`;
+      const notes = o.notes ? `"${o.notes.replace(/"/g, '""')}"` : '""';
+
+      csvContent += `${o.id},${dateStr},${customer},${phone},${wilaya},${commune},${address},${delivery},${booksCol},${bookPrice},${deliveryPrice},${discount},${coupon},${total},${st},${notes}\n`;
+    });
+
+    const filename = `orders_daralibenzid_${new Date().toISOString().split("T")[0]}.csv`;
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(csvContent);
+  } catch (error) {
+    console.error("Error exporting orders:", error);
+    res.status(500).json({ error: "Failed to export orders" });
+  }
+});
+
 // GET /orders - List all orders with filters
 router.get("/orders", async (req, res) => {
   try {
@@ -67,11 +139,12 @@ router.get("/orders/:id", async (req, res) => {
   }
 });
 
-// POST /orders - Create a new physical book order (Public Checkout)
+// POST /orders - Create a new physical book order (Single book or Multi-item Cart)
 router.post("/orders", async (req, res) => {
   try {
     const {
       book_id,
+      items, // Array for cart orders: [{book_id, title, quantity, price}]
       customer_name,
       customer_phone,
       wilaya_code,
@@ -85,21 +158,57 @@ router.post("/orders", async (req, res) => {
       notes,
     } = req.body;
 
-    if (!book_id || !customer_name || !customer_phone || !wilaya_code) {
+    if (!customer_name || !customer_phone || !wilaya_code) {
       return res.status(400).json({
-        error: "يرجى ملء جميع الحقول المطلوبة (الكتاب، الاسم، رقم الهاتف، والولاية)",
+        error: "يرجى ملء جميع الحقول المطلوبة (الاسم، رقم الهاتف، والولاية)",
       });
     }
 
-    // 1. Fetch book details
-    const bookRows = await query("SELECT * FROM books WHERE id = ?", [Number(book_id)]);
-    if (!bookRows[0]) {
-      return res.status(404).json({ error: "الكتاب المطلوب غير موجود" });
+    // 1. Calculate books subtotal & resolved items
+    let mainBookId = 0;
+    let mainBookTitle = "";
+    let subtotal = 0;
+    let totalQty = 0;
+    let itemsJson = null;
+
+    if (Array.isArray(items) && items.length > 0) {
+      // Multi-item cart
+      itemsJson = JSON.stringify(items);
+      mainBookId = Number(items[0].book_id || items[0].id || 0);
+      if (items.length === 1) {
+        mainBookTitle = items[0].title || items[0].book_title || "كتاب";
+      } else {
+        mainBookTitle = `${items[0].title || items[0].book_title} + ${items.length - 1} كتب أخرى`;
+      }
+
+      items.forEach(it => {
+        const itemPrice = Number(it.price || it.discount_price || 1200);
+        const itemQty = Math.max(1, Number(it.quantity || 1));
+        subtotal += itemPrice * itemQty;
+        totalQty += itemQty;
+      });
+    } else if (book_id) {
+      // Single book direct order
+      mainBookId = Number(book_id);
+      const bookRows = await query("SELECT * FROM books WHERE id = ?", [mainBookId]);
+      if (!bookRows[0]) {
+        return res.status(404).json({ error: "الكتاب المطلوب غير موجود" });
+      }
+      const book = bookRows[0];
+      mainBookTitle = book.title;
+      const unitPrice = Number(book.discount_price || book.price || 1200.0);
+      totalQty = Math.max(1, Number(quantity) || 1);
+      subtotal = unitPrice * totalQty;
+      itemsJson = JSON.stringify([{
+        book_id: book.id,
+        title: book.title,
+        price: unitPrice,
+        quantity: totalQty,
+        cover_url: book.cover_url
+      }]);
+    } else {
+      return res.status(400).json({ error: "لم يتم تحديد أي كتاب للطلب" });
     }
-    const book = bookRows[0];
-    const unitPrice = Number(book.discount_price || book.price || 1200.0);
-    const qty = Math.max(1, Number(quantity) || 1);
-    const subtotal = unitPrice * qty;
 
     // 2. Fetch delivery rate for the chosen wilaya
     let deliveryPrice = 600.0;
@@ -151,13 +260,13 @@ router.post("/orders", async (req, res) => {
       `INSERT INTO orders (
         book_id, book_title, customer_name, customer_phone,
         wilaya_code, wilaya_name, commune, address,
-        delivery_type, quantity, book_price, delivery_price,
+        delivery_type, quantity, items, book_price, delivery_price,
         discount_amount, coupon_code, total_price,
         payment_method, payment_status, notes, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        book.id,
-        book.title,
+        mainBookId,
+        mainBookTitle,
         customer_name.trim(),
         customer_phone.trim(),
         Number(wilaya_code),
@@ -165,8 +274,9 @@ router.post("/orders", async (req, res) => {
         (commune || "").trim(),
         (address || "").trim(),
         delivery_type === "desk" ? "desk" : "home",
-        qty,
-        unitPrice,
+        totalQty,
+        itemsJson,
+        subtotal,
         deliveryPrice,
         discountAmount,
         appliedCoupon,
@@ -178,11 +288,12 @@ router.post("/orders", async (req, res) => {
       ]
     );
 
-    const newOrder = await query("SELECT * FROM orders WHERE id = ?", [result.insertId]);
+    const [createdOrder] = await query("SELECT * FROM orders WHERE id = ?", [result.insertId]);
+
     res.status(201).json({
       success: true,
-      message: "تم تسجيل طلبك بنجاح! سنتصل بك قريباً لتأكيد الطلب.",
-      order: newOrder[0],
+      message: "تم تسجيل طلبك بنجاح! سنتصل بك هاتفياً لتأكيد الإرسال.",
+      order: createdOrder,
     });
   } catch (error) {
     console.error("Error creating order:", error);
@@ -190,20 +301,38 @@ router.post("/orders", async (req, res) => {
   }
 });
 
-// PATCH /orders/:id/status - Update order status (Admin)
-router.patch("/orders/:id/status", async (req, res) => {
+// PUT /orders/:id/status - Update order status (Admin)
+router.put("/orders/:id/status", async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, notes } = req.body;
     const allowed = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
-    if (!allowed.includes(status)) {
-      return res.status(400).json({ error: "Invalid status value" });
+    if (status && !allowed.includes(status)) {
+      return res.status(400).json({ error: "حالة الطلب غير صالحة" });
     }
 
-    await query("UPDATE orders SET status = ? WHERE id = ?", [status, req.params.id]);
-    const rows = await query("SELECT * FROM orders WHERE id = ?", [req.params.id]);
-    if (!rows[0]) return res.status(404).json({ error: "Order not found" });
+    const fields = [];
+    const params = [];
 
-    res.json(rows[0]);
+    if (status) {
+      fields.push("status = ?");
+      params.push(status);
+    }
+    if (notes !== undefined) {
+      fields.push("notes = ?");
+      params.push(notes);
+    }
+
+    if (fields.length === 0) {
+      return res.status(400).json({ error: "لا توجد حقول للتعديل" });
+    }
+
+    params.push(req.params.id);
+    await query(`UPDATE orders SET ${fields.join(", ")} WHERE id = ?`, params);
+
+    const [updated] = await query("SELECT * FROM orders WHERE id = ?", [req.params.id]);
+    if (!updated) return res.status(404).json({ error: "Order not found" });
+
+    res.json({ success: true, message: "تم تحديث حالة الطلب بنجاح", order: updated });
   } catch (error) {
     console.error("Error updating order status:", error);
     res.status(500).json({ error: "Failed to update order status" });
@@ -213,7 +342,10 @@ router.patch("/orders/:id/status", async (req, res) => {
 // DELETE /orders/:id - Delete order (Admin)
 router.delete("/orders/:id", async (req, res) => {
   try {
-    await query("DELETE FROM orders WHERE id = ?", [req.params.id]);
+    const result = await query("DELETE FROM orders WHERE id = ?", [req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Order not found" });
+    }
     res.json({ success: true, message: "تم حذف الطلب بنجاح" });
   } catch (error) {
     console.error("Error deleting order:", error);

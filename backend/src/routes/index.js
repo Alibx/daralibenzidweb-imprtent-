@@ -13,6 +13,8 @@ import uploadRouter from "./upload.js";
 import ordersRouter from "./orders.js";
 import couponsRouter from "./coupons.js";
 import deliveryRouter from "./delivery.js";
+import manuscriptsRouter from "./manuscripts.js";
+import reviewsRouter from "./reviews.js";
 
 const router = Router();
 
@@ -30,5 +32,7 @@ router.use(uploadRouter);
 router.use(ordersRouter);
 router.use(couponsRouter);
 router.use(deliveryRouter);
+router.use(manuscriptsRouter);
+router.use(reviewsRouter);
 
 export default router;

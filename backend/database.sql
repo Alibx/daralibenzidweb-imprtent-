@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `address` TEXT NOT NULL,
     `delivery_type` VARCHAR(50) DEFAULT 'home',
     `quantity` INT DEFAULT 1,
+    `items` LONGTEXT DEFAULT NULL,
     `book_price` DECIMAL(10,2) NOT NULL,
     `delivery_price` DECIMAL(10,2) NOT NULL,
     `discount_amount` DECIMAL(10,2) DEFAULT 0.00,
@@ -78,6 +79,37 @@ CREATE TABLE IF NOT EXISTS `orders` (
     PRIMARY KEY (`id`),
     KEY `idx_status` (`status`),
     KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `manuscripts` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `author_name` VARCHAR(255) NOT NULL,
+    `author_phone` VARCHAR(100) NOT NULL,
+    `author_email` VARCHAR(255) DEFAULT NULL,
+    `wilaya` VARCHAR(100) DEFAULT NULL,
+    `book_title` VARCHAR(500) NOT NULL,
+    `category` VARCHAR(255) DEFAULT NULL,
+    `pages_count` INT DEFAULT NULL,
+    `summary` TEXT,
+    `file_url` MEDIUMTEXT,
+    `status` VARCHAR(50) DEFAULT 'pending',
+    `admin_notes` TEXT,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `book_reviews` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `book_id` INT NOT NULL,
+    `reviewer_name` VARCHAR(255) NOT NULL,
+    `rating` INT NOT NULL DEFAULT 5,
+    `comment` TEXT,
+    `is_approved` TINYINT(1) DEFAULT 0,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_book_id` (`book_id`),
+    KEY `idx_is_approved` (`is_approved`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `coupons` (

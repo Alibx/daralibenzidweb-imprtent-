@@ -97,11 +97,19 @@
             <span class="link-icon">📦</span> الطلبات الواردة
             <span id="orderBadge" class="sidebar-badge" style="display: none; background: var(--gold); color: var(--navy); font-weight: bold">0</span>
           </button>
+          <button class="sidebar-link" data-section="manuscripts" data-role-access="all">
+            <span class="link-icon">📑</span> طلبات النشر والمخطوطات
+            <span id="manuscriptBadge" class="sidebar-badge" style="display: none; background: #e67e22; color: #fff; font-weight: bold">0</span>
+          </button>
           <button class="sidebar-link" data-section="books" data-role-access="admin">
             <span class="link-icon">📚</span> إدارة الكتب
           </button>
           <button class="sidebar-link" data-section="categories" data-role-access="admin">
             <span class="link-icon">🏷️</span> إدارة التصنيفات
+          </button>
+          <button class="sidebar-link" data-section="reviews" data-role-access="admin">
+            <span class="link-icon">⭐</span> تقييمات ومراجعات الكتب
+            <span id="reviewsBadge" class="sidebar-badge" style="display: none; background: #9b59b6; color: #fff; font-weight: bold">0</span>
           </button>
           <button class="sidebar-link" data-section="coupons" data-role-access="all">
             <span class="link-icon">🎟️</span> أكواد الخصم
@@ -157,7 +165,10 @@
             ☰
           </button>
           <span id="topbarTitle" class="topbar-title">لوحة الإحصاء</span>
-          <div class="topbar-right">
+          <div class="topbar-right" style="display:flex;align-items:center;gap:0.9rem">
+            <button id="btnSoundToggle" class="btn-save" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-size:0.8rem;padding:0.35rem 0.85rem;border-radius:20px;display:flex;align-items:center;gap:0.35rem;cursor:pointer" title="تفعيل / كتم صوت التنبيه للطلبات الجديدة">
+              <span id="soundIcon">🔔</span> <span id="soundText">صوت التنبيه: مفعّل</span>
+            </button>
             <span id="topbarUser" style="color: var(--text-light); font-size: 0.88rem"
               >مرحباً، الأدمن</span
             >
@@ -276,6 +287,9 @@
                 <button class="filter-tab" data-order-status="delivered">تم التوصيل 📦</button>
                 <button class="filter-tab" data-order-status="cancelled">ملغي ❌</button>
               </div>
+              <button id="btnExportOrdersExcel" class="btn-save" style="background:#27ae60;border-color:#27ae60;font-size:0.88rem;display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem" title="تصدير جدول الطلبات إلى ملف Excel / CSV">
+                📊 تصدير Excel
+              </button>
             </div>
 
             <div class="table-card">
@@ -296,6 +310,108 @@
                 <tbody id="ordersTbody"></tbody>
               </table>
             </div>
+          </div>
+
+          <!-- ── SECTION: MANUSCRIPTS (طلبات النشر والمخطوطات) ── -->
+          <div id="sec-manuscripts" class="admin-section">
+            <div class="stat-cards-row" style="margin-bottom:1.5rem">
+              <div class="stat-card">
+                <div class="stat-card-icon">📑</div>
+                <div>
+                  <div id="dashManuTotal" class="stat-card-num">0</div>
+                  <div class="stat-card-label">إجمالي المخطوطات</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">⏳</div>
+                <div>
+                  <div id="dashManuPending" class="stat-card-num" style="color:#e67e22">0</div>
+                  <div class="stat-card-label">بانتظار المراجعة</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">🔍</div>
+                <div>
+                  <div id="dashManuReview" class="stat-card-num" style="color:#3498db">0</div>
+                  <div class="stat-card-label">قيد التحكيم والقراءة</div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">✅</div>
+                <div>
+                  <div id="dashManuAccepted" class="stat-card-num" style="color:#2ecc71">0</div>
+                  <div class="stat-card-label">مقبولة للنشر</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="toolbar" style="flex-wrap:wrap;gap:0.75rem">
+              <div class="search-box" style="flex:1;min-width:260px">
+                🔍
+                <input
+                  type="search"
+                  id="manuSearch"
+                  placeholder="ابحث باسم المؤلف، الهاتف، عنوان الكتاب..."
+                />
+              </div>
+              <div class="order-filter-btns" style="display:flex;gap:0.4rem;flex-wrap:wrap">
+                <button class="filter-tab active" data-manu-status="all">الكل</button>
+                <button class="filter-tab" data-manu-status="pending">جديد ⏳</button>
+                <button class="filter-tab" data-manu-status="under_review">قيد التحكيم 🔍</button>
+                <button class="filter-tab" data-manu-status="accepted">مقبول للنشر ✅</button>
+                <button class="filter-tab" data-manu-status="rejected">مرفوض ❌</button>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>تاريخ التقديم</th>
+                    <th>المؤلف والتواصل</th>
+                    <th>عنوان العمل والتصنيف</th>
+                    <th>الملخص والملف</th>
+                    <th>حالة المخطوطة</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="manuscriptsTbody"></tbody>
+              </table>
+            </div>
+
+            <!-- MANUSCRIPT DRAWER OVERLAY -->
+            <div id="manuDrawerOverlay" class="drawer-overlay"></div>
+            <!-- MANUSCRIPT DRAWER -->
+            <aside id="manuDrawer" class="admin-drawer">
+              <div class="drawer-head">
+                <span id="manuDrawerTitle" class="drawer-head-title">مراجعة وتحديث حالة المخطوطة</span>
+                <button id="manuDrawerClose" class="modal-close">✕</button>
+              </div>
+              <div class="drawer-body">
+                <input type="hidden" id="manuEditId" />
+                <div id="manuDetailsPreview" style="background:rgba(255,255,255,0.03);padding:1rem;border-radius:8px;margin-bottom:1.2rem;font-size:0.9rem"></div>
+
+                <div class="form-group">
+                  <label>حالة المخطوطة <span style="color:var(--danger)">*</span></label>
+                  <select id="manuStatusSelect" class="form-select">
+                    <option value="pending">⏳ جديد (بانتظار المعاينة)</option>
+                    <option value="under_review">🔍 قيد القراءة والتحكيم</option>
+                    <option value="accepted">✅ مقبول للنشر والطباعة</option>
+                    <option value="rejected">❌ غير مناسب للنشر حالياً</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>ملاحظات الإدارة الداخلية والتقرير</label>
+                  <textarea id="manuAdminNotes" class="form-textarea" rows="4" placeholder="ملاحظات لجنة القراءة، التكلفة المتوقعة، أو الاتفاق مع المؤلف..."></textarea>
+                </div>
+              </div>
+              <div class="drawer-foot">
+                <button id="btnSaveManuStatus" class="btn-save" style="flex:1">💾 حفظ التحديث</button>
+                <button id="manuDrawerCancel" class="btn-cancel-drawer">إلغاء</button>
+              </div>
+            </aside>
           </div>
 
           <!-- ── SECTION 2: BOOKS ── -->
@@ -541,6 +657,41 @@
                   </button>
                 </div>
               </div>
+            </div>
+          <!-- ── SECTION: REVIEWS (تقييمات ومراجعات الكتب) ── -->
+          <div id="sec-reviews" class="admin-section">
+            <div class="toolbar" style="flex-wrap:wrap;gap:0.75rem">
+              <div class="search-box" style="flex:1;min-width:260px">
+                🔍
+                <input
+                  type="search"
+                  id="reviewsSearch"
+                  placeholder="ابحث باسم القارئ، الكتاب، أو نص التقييم..."
+                />
+              </div>
+              <div class="order-filter-btns" style="display:flex;gap:0.4rem">
+                <button class="filter-tab active" data-review-status="all">الكل</button>
+                <button class="filter-tab" data-review-status="pending">بانتظار الموافقة ⏳</button>
+                <button class="filter-tab" data-review-status="approved">المعتمدة والمنشورة ✅</button>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>تاريخ التقييم</th>
+                    <th>الكتاب المستهدف</th>
+                    <th>اسم القارئ</th>
+                    <th>التقييم بالنجوم</th>
+                    <th>نص المراجعة</th>
+                    <th>حالة النشر</th>
+                    <th>الإجراءات</th>
+                  </tr>
+                </thead>
+                <tbody id="reviewsTbody"></tbody>
+              </table>
             </div>
           </div>
 
@@ -1050,6 +1201,37 @@
                     name="hero_subtitle"
                     placeholder="وصف مختصر للدار..."
                   />
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>📢 شريط الإعلانات الترويجي العلوي (Top Announcement Bar)</h3>
+              <div class="admin-form">
+                <div class="form-group">
+                  <label>نص الإعلان الترويجي</label>
+                  <input
+                    type="text"
+                    name="announcement_text"
+                    placeholder="مثال: 🚚 شحن مخفض لجميع الـ 58 ولاية — استخدم كود: SALE2025"
+                  />
+                </div>
+                <div class="admin-form settings-grid" style="margin-top:0.8rem">
+                  <div class="form-group">
+                    <label>رابط الزر / التوجيه (اختياري)</label>
+                    <input
+                      type="text"
+                      name="announcement_link"
+                      placeholder="مثال: #publications أو https://..."
+                    />
+                  </div>
+                  <div class="form-group" style="display:flex;flex-direction:column;justify-content:center">
+                    <label style="margin-bottom:0.5rem">حالة ظهور الشريط الإعلاني</label>
+                    <label class="toggle-switch">
+                      <input type="checkbox" name="announcement_active" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
