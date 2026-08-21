@@ -209,41 +209,21 @@ async function loadBookData() {
     discEl.style.display = hasDiscount ? 'inline' : 'none';
   }
 
-  // Meta Pills
+  // Meta Pills (clean and essential only)
   const pillsEl = document.getElementById('bookMetaPills');
   if (pillsEl) {
-    pillsEl.innerHTML = `
-      ${currentBook.year ? `<span class="book-meta-pill">📅 سنة النشر: ${currentBook.year}</span>` : ''}
-      ${currentBook.pages ? `<span class="book-meta-pill">📄 عدد الصفحات: ${currentBook.pages} صفحة</span>` : ''}
-      <span class="book-meta-pill">📦 متوفر وجاهز للشحن الفوري</span>
-      <span class="book-meta-pill">🇩🇿 الدفع عند الاستلام</span>
-    `;
+    const metaHtml = [];
+    if (currentBook.year) metaHtml.push(`<span class="book-meta-pill">📅 سنة النشر: ${currentBook.year}</span>`);
+    if (currentBook.pages) metaHtml.push(`<span class="book-meta-pill">📄 ${currentBook.pages} صفحة</span>`);
+    pillsEl.innerHTML = metaHtml.join('');
   }
 
   // Description
   const descEl = document.getElementById('bookPageDesc');
   if (descEl) {
-    descEl.textContent = currentBook.description || 'إصدار مميز من منشورات دار علي بن زيد للطباعة والنشر. طبعة أصلية منقحة ومطبوعة بأعلى معايير الجودة الورقية والطباعية.';
+    descEl.textContent = currentBook.description || 'إصدار مميز من منشورات دار علي بن زيد للطباعة والنشر.';
   }
 
-  // PDF Box
-  if (currentBook.pdf_url) {
-    const pdfBox = document.getElementById('pdfPurchaseBox');
-    const pdfVal = document.getElementById('pdfPriceVal');
-    if (pdfBox) pdfBox.style.display = 'flex';
-    if (pdfVal) pdfVal.textContent = (currentBook.pdf_price || 5.0).toFixed(2);
-  }
-
-  // WhatsApp Order Link
-  const waBtn = document.getElementById('btnOrderWaDirect');
-  if (waBtn) {
-    const phone = '213770921426';
-    const text = encodeURIComponent(`مرحباً دار علي بن زيد، أود طلب كتاب (${currentBook.title}) للمؤلف (${currentBook.author}):`);
-    waBtn.href = `https://wa.me/${phone}?text=${text}`;
-  }
-
-  // Reviews
-  loadBookReviews(currentBook.id);
   updateOrderCalc();
 }
 
@@ -567,9 +547,9 @@ function initOrderForm() {
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  initCart();
-  initReviews();
-  initOrderForm();
-  await loadDeliveryRates();
-  await loadBookData();
+  try { initCart(); } catch (e) { console.error(e); }
+  try { initReviews(); } catch (e) { /* silent */ }
+  try { initOrderForm(); } catch (e) { console.error(e); }
+  try { await loadDeliveryRates(); } catch (e) { console.error(e); }
+  try { await loadBookData(); } catch (e) { console.error(e); }
 });

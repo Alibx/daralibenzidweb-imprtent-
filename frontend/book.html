@@ -10,17 +10,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="./css/style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
   <style>
-    /* ─── DEDICATED BOOK ORDER PAGE STYLES ─── */
+    /* ─── CLEAN & MODERN BOOK PAGE ─── */
     .book-page-wrap {
       min-height: 100vh;
       background: var(--navy);
       color: var(--text-light);
-      padding: 1.5rem 1rem 4rem;
+      padding: 1.5rem 1rem 3rem;
     }
     .book-page-nav {
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 0 auto 1.5rem;
       display: flex;
       align-items: center;
@@ -33,90 +32,56 @@
     .book-page-nav .back-link {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       color: var(--gold);
       text-decoration: none;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       transition: var(--transition);
     }
     .book-page-nav .back-link:hover {
-      transform: translateX(4px);
       color: var(--gold-light);
+      transform: translateX(3px);
     }
     .book-page-nav .logo-txt {
       font-family: 'Amiri', serif;
-      font-size: 1.3rem;
+      font-size: 1.25rem;
       color: #fff;
     }
 
     .book-page-container {
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr 1.15fr;
+      grid-template-columns: 1.15fr 1fr;
       gap: 2rem;
       align-items: start;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 850px) {
       .book-page-container {
         grid-template-columns: 1fr;
       }
     }
 
-    /* Left / Sticky Order Card */
-    .book-order-form-card {
-      background: var(--navy-mid);
-      border: 1.5px solid var(--border);
-      border-radius: 16px;
-      padding: 1.8rem;
-      box-shadow: 0 12px 35px rgba(0,0,0,0.35);
-      position: sticky;
-      top: 1.5rem;
-    }
-    .order-card-badge {
-      display: inline-block;
-      background: rgba(201,168,76,0.15);
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      padding: 0.25rem 0.8rem;
-      border-radius: 50px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      margin-bottom: 0.6rem;
-    }
-    .order-card-title {
-      font-family: 'Amiri', serif;
-      font-size: 1.6rem;
-      color: var(--text-light);
-      margin: 0 0 0.4rem;
-    }
-    .order-card-subtitle {
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      margin-bottom: 1.2rem;
-      line-height: 1.5;
-    }
-
-    /* Right Book Details Card */
+    /* Right Book Details Box */
     .book-info-card {
       background: var(--navy-mid);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 2rem;
+      border-radius: 14px;
+      padding: 1.8rem;
     }
     .book-showcase {
       display: flex;
-      gap: 1.8rem;
-      margin-bottom: 1.5rem;
+      gap: 1.5rem;
+      margin-bottom: 1.2rem;
       flex-wrap: wrap;
     }
     .book-cover-large {
-      width: 220px;
-      height: 310px;
-      border-radius: 10px;
+      width: 180px;
+      height: 255px;
+      border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       border: 1px solid rgba(255,255,255,0.1);
       flex-shrink: 0;
       background: #111e2e;
@@ -132,7 +97,7 @@
     }
     .book-header-info {
       flex: 1;
-      min-width: 240px;
+      min-width: 200px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -141,164 +106,178 @@
       display: inline-block;
       background: rgba(201,168,76,0.15);
       color: var(--gold);
-      padding: 0.25rem 0.8rem;
+      padding: 0.2rem 0.65rem;
       border-radius: 50px;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 700;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.5rem;
       align-self: flex-start;
-      border: 1px solid rgba(201,168,76,0.3);
+      border: 1px solid rgba(201,168,76,0.25);
     }
     .book-page-title {
       font-family: 'Amiri', serif;
-      font-size: 2rem;
+      font-size: 1.8rem;
       color: #fff;
-      margin: 0 0 0.5rem;
-      line-height: 1.25;
+      margin: 0 0 0.4rem;
+      line-height: 1.3;
     }
     .book-page-author {
-      font-size: 1.05rem;
+      font-size: 0.95rem;
       color: var(--text-muted);
-      margin-bottom: 1rem;
+      margin-bottom: 0.8rem;
     }
-    .book-price-tag-lg {
+    .book-price-tag-clean {
       display: flex;
       align-items: baseline;
-      gap: 0.8rem;
-      background: rgba(0,0,0,0.25);
-      padding: 0.7rem 1rem;
-      border-radius: 8px;
-      border: 1px dashed rgba(201,168,76,0.4);
-      margin-bottom: 1rem;
+      gap: 0.6rem;
+      margin-bottom: 0.8rem;
     }
-    .price-lg-curr {
-      font-size: 1.8rem;
+    .price-clean-curr {
+      font-size: 1.6rem;
       font-weight: 900;
       color: var(--gold);
     }
-    .price-lg-old {
-      font-size: 1.1rem;
+    .price-clean-old {
+      font-size: 1rem;
       color: var(--text-muted);
       text-decoration: line-through;
     }
-    .price-lg-discount {
+    .price-clean-discount {
       background: #e74c3c;
       color: #fff;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       font-weight: 700;
-      padding: 0.2rem 0.5rem;
+      padding: 0.15rem 0.45rem;
       border-radius: 4px;
     }
 
     .book-meta-pills {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       flex-wrap: wrap;
-      margin-bottom: 1.5rem;
     }
     .book-meta-pill {
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.04);
       border: 1px solid var(--border);
-      padding: 0.35rem 0.8rem;
+      padding: 0.25rem 0.6rem;
       border-radius: 6px;
-      font-size: 0.85rem;
-      color: var(--text-light);
+      font-size: 0.8rem;
+      color: var(--text-muted);
     }
 
     .book-desc-section {
       border-top: 1px solid var(--border);
-      padding-top: 1.5rem;
+      padding-top: 1.2rem;
       margin-top: 1rem;
     }
     .book-desc-section h3 {
       color: var(--gold);
-      font-size: 1.2rem;
-      margin-bottom: 0.8rem;
+      font-size: 1.05rem;
+      margin-bottom: 0.5rem;
     }
     .book-desc-text {
       color: var(--text-light);
-      line-height: 1.8;
-      font-size: 0.95rem;
+      line-height: 1.7;
+      font-size: 0.92rem;
       white-space: pre-line;
     }
 
-    .guarantees-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.8rem;
-      margin-top: 1.5rem;
-      padding-top: 1.2rem;
-      border-top: 1px solid var(--border);
+    /* Left / Clean Order Form Card */
+    .book-order-form-card {
+      background: var(--navy-mid);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.6rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
-    .guarantee-box {
+    .order-card-title {
+      font-family: 'Amiri', serif;
+      font-size: 1.45rem;
+      color: var(--text-light);
+      margin: 0 0 0.8rem;
       display: flex;
       align-items: center;
-      gap: 0.6rem;
-      background: rgba(255,255,255,0.02);
-      border: 1px solid rgba(255,255,255,0.06);
-      padding: 0.6rem 0.8rem;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      color: var(--text-muted);
+      justify-content: space-between;
     }
-    .guarantee-box span.icon {
-      font-size: 1.2rem;
+    .form-group-clean {
+      margin-bottom: 0.9rem;
+    }
+    .form-label-clean {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+    }
+    .form-input-clean, .form-select-clean {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: var(--navy);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-light);
+      font-size: 0.9rem;
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      transition: var(--transition);
+    }
+    .form-input-clean:focus, .form-select-clean:focus {
+      outline: none;
+      border-color: var(--gold);
     }
 
-    /* Stepper & Form controls */
-    .form-stepper {
+    .form-stepper-clean {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+      gap: 0.4rem;
     }
-    .btn-step {
-      width: 36px;
-      height: 36px;
-      background: rgba(255,255,255,0.08);
+    .btn-step-clean {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.06);
       border: 1.5px solid var(--border);
       color: #fff;
       border-radius: 6px;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: var(--transition);
     }
-    .btn-step:hover {
+    .btn-step-clean:hover {
       background: var(--gold);
       color: var(--navy);
       border-color: var(--gold);
     }
-    .step-input {
-      width: 55px;
-      height: 36px;
+    .step-input-clean {
+      width: 45px;
+      height: 32px;
       text-align: center;
       background: var(--navy);
       border: 1.5px solid var(--border);
       color: var(--gold);
       font-weight: bold;
-      font-size: 1.1rem;
+      font-size: 1rem;
       border-radius: 6px;
     }
 
     .delivery-options-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.8rem;
-      margin-bottom: 1.2rem;
+      gap: 0.6rem;
+      margin-bottom: 0.9rem;
     }
     .del-opt-card {
       border: 1.5px solid var(--border);
       background: var(--navy);
       border-radius: 8px;
-      padding: 0.75rem 0.9rem;
+      padding: 0.6rem 0.75rem;
       cursor: pointer;
       transition: var(--transition);
       display: flex;
       flex-direction: column;
-      gap: 0.2rem;
+      gap: 0.15rem;
     }
     .del-opt-card.active {
       border-color: var(--gold);
@@ -309,85 +288,72 @@
     }
     .del-opt-title {
       font-weight: 700;
-      font-size: 0.88rem;
+      font-size: 0.82rem;
       color: var(--text-light);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
     }
     .del-opt-price {
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       color: var(--gold);
       font-weight: bold;
     }
 
-    .order-calc-table {
-      background: rgba(0,0,0,0.25);
+    .order-calc-clean {
+      background: rgba(0,0,0,0.2);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 0.8rem 1rem;
-      margin-bottom: 1.2rem;
-      font-size: 0.9rem;
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 1rem;
+      font-size: 0.88rem;
     }
     .calc-row {
       display: flex;
       justify-content: space-between;
-      padding: 0.35rem 0;
-      border-bottom: 1px dashed rgba(255,255,255,0.06);
-    }
-    .calc-row:last-child {
-      border-bottom: none;
+      padding: 0.25rem 0;
     }
     .calc-row.total-row {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 900;
       color: var(--gold);
-      padding-top: 0.6rem;
-      border-top: 1px solid rgba(201,168,76,0.3);
+      padding-top: 0.5rem;
+      border-top: 1px dashed rgba(255,255,255,0.1);
+      margin-top: 0.3rem;
     }
 
-    .btn-submit-order-big {
+    .btn-submit-clean {
       width: 100%;
-      padding: 1rem;
+      padding: 0.9rem;
       background: linear-gradient(135deg, var(--gold), var(--gold-light));
       color: var(--navy);
       border: none;
-      border-radius: 10px;
-      font-size: 1.15rem;
+      border-radius: 8px;
+      font-size: 1.05rem;
       font-weight: 900;
       cursor: pointer;
       font-family: 'Cairo', sans-serif;
-      box-shadow: 0 6px 20px rgba(201,168,76,0.35);
+      box-shadow: 0 4px 15px rgba(201,168,76,0.3);
       transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
     }
-    .btn-submit-order-big:hover {
+    .btn-submit-clean:hover {
       transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(201,168,76,0.5);
+      box-shadow: 0 6px 20px rgba(201,168,76,0.45);
     }
-    .btn-add-cart-secondary {
+    .btn-cart-clean {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.65rem;
       background: transparent;
-      border: 1.5px solid var(--gold);
-      color: var(--gold);
-      border-radius: 10px;
-      font-size: 0.95rem;
+      border: 1.5px solid var(--border);
+      color: var(--text-light);
+      border-radius: 8px;
+      font-size: 0.88rem;
       font-weight: 700;
       cursor: pointer;
       font-family: 'Cairo', sans-serif;
-      margin-top: 0.6rem;
+      margin-top: 0.5rem;
       transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
     }
-    .btn-add-cart-secondary:hover {
-      background: rgba(201,168,76,0.15);
+    .btn-cart-clean:hover {
+      border-color: var(--gold);
+      color: var(--gold);
     }
   </style>
 </head>
@@ -400,7 +366,7 @@
     <!-- NAVIGATION BAR -->
     <header class="book-page-nav">
       <a href="./index.html#publications" class="back-link">
-        <span>← العودة لقائمة الكتب</span>
+        <span>← العودة للموقع الرئيسي</span>
       </a>
       <div class="logo-txt">دار علي بن زيد للطباعة والنشر</div>
       <button id="navCartBtn" class="nav-cart-btn" aria-label="سلة التسوق" title="عرض سلة الكتب">
@@ -411,227 +377,138 @@
     </header>
 
     <div class="book-page-container">
-      <!-- ═══ RIGHT COLUMN: BOOK PRESENTATION & REVIEWS ═══ -->
+      <!-- ═══ RIGHT COLUMN: BOOK DETAILS ═══ -->
       <section class="book-info-card">
         <div class="book-showcase">
           <div id="bookCoverLarge" class="book-cover-large">
-            <span style="font-size:4rem;opacity:.5">📖</span>
+            <span style="font-size:3.5rem;opacity:.5">📖</span>
           </div>
           <div class="book-header-info">
-            <span id="bookCategoryBadge" class="book-page-cat">جاري التحميل...</span>
+            <span id="bookCategoryBadge" class="book-page-cat">إصدارات الدار</span>
             <h1 id="bookPageTitle" class="book-page-title">عنوان الكتاب</h1>
-            <p id="bookPageAuthor" class="book-page-author">✍️ اسم الكاتب / المؤلف</p>
+            <p id="bookPageAuthor" class="book-page-author">✍️ تأليف: --</p>
             
-            <div class="book-price-tag-lg">
-              <span id="bookPriceCurr" class="price-lg-curr">0 دج</span>
-              <span id="bookPriceOld" class="price-lg-old" style="display:none">0 دج</span>
-              <span id="bookPriceDiscount" class="price-lg-discount" style="display:none">خصم</span>
+            <div class="book-price-tag-clean">
+              <span id="bookPriceCurr" class="price-clean-curr">0 دج</span>
+              <span id="bookPriceOld" class="price-clean-old" style="display:none">0 دج</span>
+              <span id="bookPriceDiscount" class="price-clean-discount" style="display:none">خصم</span>
             </div>
 
             <div class="book-meta-pills" id="bookMetaPills">
-              <!-- Dynamically populated -->
+              <!-- Dynamically filled with year/pages only -->
             </div>
           </div>
         </div>
 
         <!-- Book Description -->
         <div class="book-desc-section">
-          <h3>📖 نبذة عن الكتاب والعمل:</h3>
-          <p id="bookPageDesc" class="book-desc-text">جارٍ تحميل وصف وتفاصيل الكتاب...</p>
-        </div>
-
-        <!-- Guarantees -->
-        <div class="guarantees-grid">
-          <div class="guarantee-box">
-            <span class="icon">🚚</span>
-            <span>توصيل سريع لجميع الـ 58 ولاية</span>
-          </div>
-          <div class="guarantee-box">
-            <span class="icon">💵</span>
-            <span>الدفع عند الاستلام والمعاينة</span>
-          </div>
-          <div class="guarantee-box">
-            <span class="icon">📚</span>
-            <span>طبعة أصلية وجودة ورق فاخرة</span>
-          </div>
-          <div class="guarantee-box">
-            <span class="icon">🤝</span>
-            <span>خدمة زبائن ومتابعة على واتساب</span>
-          </div>
-        </div>
-
-        <!-- Digital PDF Option if available -->
-        <div id="pdfPurchaseBox" style="display:none;margin-top:1.5rem;background:rgba(0,112,186,0.12);border:1px solid #0070ba;border-radius:10px;padding:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.8rem">
-          <div>
-            <div style="font-weight:bold;color:#fff">📄 هل تفضل القراءة الإلكترونية الفورية؟</div>
-            <div style="font-size:0.82rem;color:var(--text-muted)">نسخة PDF رقمية عالية الجودة للتحميل الفوري بعد الدفع</div>
-          </div>
-          <button id="btnBuyPdf" class="btn-save" style="background:#0070ba;border-color:#0070ba;padding:0.5rem 1.2rem">💳 شراء PDF ($<span id="pdfPriceVal">5.0</span>)</button>
-        </div>
-
-        <!-- Customer Reviews & Ratings -->
-        <div class="book-reviews-section" style="margin-top:2rem">
-          <div class="reviews-header">
-            <h3 class="reviews-title">⭐ آراء ومراجعات القراء</h3>
-            <div id="bookRatingSummary" class="rating-summary-pill">
-              <span id="ratingAvgNum" class="rating-num">5.0</span>
-              <span id="ratingAvgStars" class="rating-stars">★★★★★</span>
-              <span id="ratingCountText" class="rating-count">(0 مراجعات)</span>
-            </div>
-          </div>
-
-          <div id="bookReviewsList" class="reviews-list">
-            <div class="empty-reviews">جارٍ تحميل المراجعات...</div>
-          </div>
-
-          <!-- Add Review Form -->
-          <form id="addReviewForm" class="add-review-form">
-            <h4 class="form-title">✍️ أضف رأيك وتقييمك في هذا الكتاب</h4>
-            <div class="star-picker-wrap">
-              <span class="star-label">تقييمك:</span>
-              <div class="stars-select" id="starIcons">
-                <span class="star-btn" data-val="1">★</span>
-                <span class="star-btn" data-val="2">★</span>
-                <span class="star-btn" data-val="3">★</span>
-                <span class="star-btn" data-val="4">★</span>
-                <span class="star-btn active" data-val="5">★</span>
-              </div>
-              <input type="hidden" id="reviewRatingInput" value="5" />
-            </div>
-            <div class="form-group" style="margin-bottom:0.6rem">
-              <input type="text" id="reviewNameInput" class="form-input" placeholder="اسمك الكريم *" required />
-            </div>
-            <div class="form-group" style="margin-bottom:0.6rem">
-              <textarea id="reviewCommentInput" class="form-input" placeholder="اكتب رأيك أو مراجعتك حول الكتاب..." rows="2"></textarea>
-            </div>
-            <button type="submit" id="btnSubmitReview" class="btn-submit-review">إرسال التقييم ✨</button>
-          </form>
+          <h3>📖 نبذة عن الكتاب:</h3>
+          <p id="bookPageDesc" class="book-desc-text">جارٍ تحميل وصف الكتاب...</p>
         </div>
       </section>
 
-      <!-- ═══ LEFT COLUMN: DIRECT ORDER FORM (COD) ═══ -->
+      <!-- ═══ LEFT COLUMN: CLEAN ORDER FORM ═══ -->
       <aside class="book-order-form-card">
-        <span class="order-card-badge">🛍️ طلب شراء فوري</span>
-        <h2 class="order-card-title">استمارة الطلب والتوصيل</h2>
-        <p class="order-card-subtitle">ادفع عند استلام الطرد بعد معاينته من طرف موزع التوصيل</p>
+        <div class="order-card-title">
+          <span>🛍️ استمارة الطلب السريع</span>
+          <div class="form-stepper-clean">
+            <button type="button" class="btn-step-clean" id="btnQtyMinus">-</button>
+            <input type="number" id="orderQtyInput" class="step-input-clean" value="1" min="1" max="20" readonly />
+            <button type="button" class="btn-step-clean" id="btnQtyPlus">+</button>
+          </div>
+        </div>
 
         <form id="bookOrderForm" novalidate>
-          <!-- Quantity Stepper -->
-          <div style="margin-bottom:1rem">
-            <label class="form-label" style="margin-bottom:0.3rem">الكمية المطلوبة (عدد النسخ):</label>
-            <div class="form-stepper">
-              <button type="button" class="btn-step" id="btnQtyMinus">-</button>
-              <input type="number" id="orderQtyInput" class="step-input" value="1" min="1" max="20" readonly />
-              <button type="button" class="btn-step" id="btnQtyPlus">+</button>
-              <span style="font-size:0.85rem;color:var(--text-muted);margin-right:0.5rem">نسخة ورقية</span>
-            </div>
-          </div>
-
           <!-- Customer Name -->
-          <div class="form-group">
-            <label class="form-label">الاسم الكامل <span style="color:var(--danger)">*</span></label>
-            <input type="text" id="orderCustomerName" class="form-input" placeholder="اكتب اسمك ولقبك" required />
+          <div class="form-group-clean">
+            <label class="form-label-clean">الاسم الكامل <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="orderCustomerName" class="form-input-clean" placeholder="الاسم واللقب" required />
           </div>
 
           <!-- Customer Phone -->
-          <div class="form-group">
-            <label class="form-label">رقم الهاتف (للاتصال والتأكيد) <span style="color:var(--danger)">*</span></label>
-            <input type="tel" id="orderCustomerPhone" class="form-input" placeholder="مثال: 0770 00 00 00" required />
+          <div class="form-group-clean">
+            <label class="form-label-clean">رقم الهاتف (للاتصال والتأكيد) <span style="color:var(--danger)">*</span></label>
+            <input type="tel" id="orderCustomerPhone" class="form-input-clean" placeholder="0770 00 00 00" required />
           </div>
 
           <!-- Wilaya & Commune -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.9rem">
             <div>
-              <label class="form-label">الولاية (58 ولاية) <span style="color:var(--danger)">*</span></label>
-              <select id="orderWilayaSelect" class="form-select" required>
+              <label class="form-label-clean">الولاية (58 ولاية) <span style="color:var(--danger)">*</span></label>
+              <select id="orderWilayaSelect" class="form-select-clean" required>
                 <option value="">-- اختر ولايتك --</option>
               </select>
             </div>
             <div>
-              <label class="form-label">البلدية <span style="color:var(--danger)">*</span></label>
-              <select id="orderCommuneSelect" class="form-select" required>
+              <label class="form-label-clean">البلدية <span style="color:var(--danger)">*</span></label>
+              <select id="orderCommuneSelect" class="form-select-clean" required>
                 <option value="">-- اختر الولاية أولاً --</option>
               </select>
             </div>
           </div>
-          <input type="text" id="orderCommuneCustom" class="form-input" placeholder="اكتب اسم بلديتك هنا..." style="display:none;margin-bottom:1rem" />
+          <input type="text" id="orderCommuneCustom" class="form-input-clean" placeholder="اكتب اسم بلديتك..." style="display:none;margin-bottom:0.9rem" />
 
           <!-- Address -->
-          <div class="form-group">
-            <label class="form-label">العنوان بالتفصيل (الحي / الشارع / المعلم) <span style="color:var(--danger)">*</span></label>
-            <input type="text" id="orderAddress" class="form-input" placeholder="مثال: حي النور، عمارة 5، قرب مسجد..." required />
+          <div class="form-group-clean">
+            <label class="form-label-clean">العنوان بالتفصيل <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="orderAddress" class="form-input-clean" placeholder="الحي، الشارع، أو المعلم..." required />
           </div>
 
           <!-- Delivery Type Options -->
-          <div style="margin-bottom:1rem">
-            <label class="form-label" style="margin-bottom:0.4rem">نوع التوصيل المطلوب:</label>
+          <div style="margin-bottom:0.9rem">
+            <label class="form-label-clean">نوع التوصيل:</label>
             <div class="delivery-options-grid">
               <label class="del-opt-card active" id="labelDelHome">
                 <input type="radio" name="orderDeliveryType" value="home" checked />
-                <div class="del-opt-title">
-                  <span>🏠 توصيل للمنزل</span>
-                </div>
+                <div class="del-opt-title">🏠 توصيل للمنزل</div>
                 <div class="del-opt-price" id="homeDeliveryPrice">-- دج</div>
               </label>
               <label class="del-opt-card" id="labelDelDesk">
                 <input type="radio" name="orderDeliveryType" value="desk" />
-                <div class="del-opt-title">
-                  <span>🏢 استلام من المكتب</span>
-                </div>
+                <div class="del-opt-title">🏢 استلام من المكتب</div>
                 <div class="del-opt-price" id="deskDeliveryPrice">-- دج</div>
               </label>
             </div>
           </div>
 
-          <!-- Coupon Code -->
-          <div class="form-group" style="margin-bottom:1rem">
-            <label class="form-label">كود الخصم (إن وجد)</label>
-            <div style="display:flex;gap:0.4rem">
-              <input type="text" id="orderCouponInput" class="form-input" placeholder="رمز الكوبون..." style="text-transform:uppercase;flex:1" />
-              <button type="button" id="btnApplyCoupon" class="btn-save" style="padding:0.6rem 1rem;white-space:nowrap">تطبيق</button>
+          <!-- Coupon Code (Compact) -->
+          <div class="form-group-clean" style="margin-bottom:0.8rem">
+            <div style="display:flex;gap:0.35rem">
+              <input type="text" id="orderCouponInput" class="form-input-clean" placeholder="كود الخصم (إن وجد)..." style="text-transform:uppercase;flex:1" />
+              <button type="button" id="btnApplyCoupon" class="btn-save" style="padding:0.6rem 0.9rem;font-size:0.85rem;white-space:nowrap">تطبيق</button>
             </div>
-            <div id="couponStatusMsg" style="font-size:0.8rem;margin-top:0.3rem"></div>
+            <div id="couponStatusMsg" style="font-size:0.78rem;margin-top:0.25rem"></div>
           </div>
 
           <!-- Real-Time Calculation -->
-          <div class="order-calc-table">
+          <div class="order-calc-clean">
             <div class="calc-row">
-              <span id="calcBookPriceLabel">سعر الكتاب (×1):</span>
+              <span id="calcBookPriceLabel">سعر الكتاب:</span>
               <strong id="calcBookPrice">0 دج</strong>
             </div>
             <div class="calc-row">
-              <span>تكلفة التوصيل:</span>
+              <span>التوصيل:</span>
               <strong id="calcDeliveryPrice">اختر الولاية</strong>
             </div>
             <div class="calc-row" id="calcDiscountRow" style="display:none;color:var(--success)">
-              <span>قيمة الخصم:</span>
+              <span>الخصم:</span>
               <strong id="calcDiscount">-0 دج</strong>
             </div>
             <div class="calc-row total-row">
-              <span>المبلغ الإجمالي للدفع:</span>
+              <span>الإجمالي (الدفع عند الاستلام):</span>
               <strong id="calcTotal">0 دج</strong>
             </div>
           </div>
 
-          <!-- Notes -->
-          <div class="form-group" style="margin-bottom:1.2rem">
-            <input type="text" id="orderNotes" class="form-input" placeholder="ملاحظات إضافية للتوصيل (اختياري)..." />
-          </div>
-
           <!-- Submit CTA -->
-          <button type="submit" id="btnSubmitOrder" class="btn-submit-order-big">
-            <span>🛍️ اضغط هنا لتأكيد طلبك (الدفع عند الاستلام)</span>
+          <button type="submit" id="btnSubmitOrder" class="btn-submit-clean">
+            🛍️ تأكيد الطلب الآن (الدفع عند الاستلام)
           </button>
 
           <!-- Add to Cart Secondary -->
-          <button type="button" id="btnAddToCart" class="btn-add-cart-secondary">
-            <span>🛒 إضافة هذا الكتاب إلى سلة المشتريات</span>
+          <button type="button" id="btnAddToCart" class="btn-cart-clean">
+            🛒 إضافة هذا الكتاب إلى سلة المشتريات
           </button>
-
-          <!-- WhatsApp Direct Order -->
-          <a id="btnOrderWaDirect" href="#" target="_blank" rel="noopener" class="btn-outline" style="width:100%;margin-top:0.6rem;display:flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.6rem;text-decoration:none;border-color:#25D366;color:#25D366">
-            <span>💬 أو اطلب مباشرة عبر واتساب</span>
-          </a>
         </form>
       </aside>
     </div>
@@ -690,6 +567,6 @@
     </div>
   </div>
 
-  <script type="module" src="./js/book.js?v=2"></script>
+  <script type="module" src="./js/book.js?v=3"></script>
 </body>
 </html>
