@@ -828,7 +828,29 @@ window.deleteMilestone = function (idx) {
 
 // ─── SECTION 5: MESSAGES ──────────────────────────────────────────────────────
 let msgFilter = 'all';
+let msgSearchQuery = '';
 let adminMsgs = [];
+let selectedMsgIds = new Set();
+
+function updateMsgBulkBar() {
+  const bar = document.getElementById('msgBulkBar');
+  const countEl = document.getElementById('msgSelectedCount');
+  const selectAll = document.getElementById('msgSelectAll');
+  if (!bar || !countEl) return;
+
+  const count = selectedMsgIds.size;
+  countEl.textContent = count;
+  bar.style.display = count > 0 ? 'flex' : 'none';
+
+  if (selectAll) {
+    const visibleCheckboxes = document.querySelectorAll('.msg-row-cb');
+    if (visibleCheckboxes.length > 0) {
+      selectAll.checked = Array.from(visibleCheckboxes).every(cb => cb.checked);
+    } else {
+      selectAll.checked = false;
+    }
+  }
+}
 
 async function renderMessagesSection(filter) {
   if (filter !== undefined) msgFilter = filter;
@@ -842,24 +864,38 @@ async function renderMessagesSection(filter) {
     adminMsgs = [];
   }
 
-  const filtered =
-    msgFilter === 'unread' ? adminMsgs.filter(m => !m.is_read) :
-      msgFilter === 'read' ? adminMsgs.filter(m => m.is_read) :
-        adminMsgs;
+  const filtered = adminMsgs.filter(m => {
+    let matchStatus = true;
+    if (msgFilter === 'unread') matchStatus = !m.is_read;
+    if (msgFilter === 'read') matchStatus = !!m.is_read;
+
+    const q = (msgSearchQuery || '').toLowerCase().trim();
+    const matchSearch = !q ||
+      (m.name && m.name.toLowerCase().includes(q)) ||
+      (m.email && m.email.toLowerCase().includes(q)) ||
+      (m.subject && m.subject.toLowerCase().includes(q)) ||
+      (m.message && m.message.toLowerCase().includes(q));
+
+    return matchStatus && matchSearch;
+  });
 
   const sorted = [...filtered].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
 
   tbody.innerHTML = sorted.length
     ? sorted.map(m => {
       const isRead = m.is_read;
-      const dateStr = new Date(m.created_at || Date.now()).toLocaleDateString('ar-SA');
+      const isChecked = selectedMsgIds.has(m.id);
+      const dateStr = new Date(m.created_at || Date.now()).toLocaleDateString('ar-DZ');
       return `
-      <tr class="message-row${isRead ? '' : ' unread'}" data-msg-id="${m.id}">
-        <td class="td-name">${escHtml(m.name)}</td>
-        <td>${escHtml(m.email)}</td>
-        <td>${escHtml(m.subject)}</td>
-        <td>${dateStr}</td>
-        <td>${isRead ? '<span class="status-badge status-published">مقروء</span>' : '<span class="unread-badge">جديد</span>'}</td>
+      <tr class="message-row${isRead ? '' : ' unread'}" data-msg-id="${m.id}" style="${isChecked ? 'background:rgba(201,168,76,0.08)' : ''}">
+        <td style="text-align:center">
+          <input type="checkbox" class="msg-row-cb" data-id="${m.id}" ${isChecked ? 'checked' : ''} onchange="toggleMsgSelection(${m.id}, this.checked)" />
+        </td>
+        <td class="td-name"><strong>${escHtml(m.name)}</strong></td>
+        <td style="font-size:0.85rem;color:var(--text-muted)">${escHtml(m.email)}</td>
+        <td><strong style="color:var(--text-light)">${escHtml(m.subject || 'بدون عنوان')}</strong></td>
+        <td style="font-size:0.85rem;color:var(--text-muted)">${dateStr}</td>
+        <td>${isRead ? '<span class="status-badge status-published">مقروء ✓</span>' : '<span class="status-badge" style="background:#e67e22;color:#fff">جديد 📩</span>'}</td>
         <td>
           <div class="action-btns" style="display:flex;gap:0.35rem">
             <button class="btn-view" onclick="toggleMsgDetail(${m.id})">عرض</button>
@@ -869,7 +905,7 @@ async function renderMessagesSection(filter) {
         </td>
       </tr>
       <tr class="detail-row" id="detail-${m.id}">
-        <td colspan="6">
+        <td colspan="7">
           <div class="message-detail" id="msg-detail-${m.id}">
             <div class="message-text-box">${escHtml(m.message)}</div>
             <div class="msg-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap">
@@ -883,17 +919,101 @@ async function renderMessagesSection(filter) {
         </td>
       </tr>`;
     }).join('')
-    : `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📬</div><p>لا توجد رسائل</p></div></td></tr>`;
+    : `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📬</div><p>لا توجد رسائل واردة مطابقة</p></div></td></tr>`;
 
+  updateMsgBulkBar();
   updateUnreadBadge();
 }
+
+window.toggleMsgSelection = function(id, checked) {
+  if (checked) {
+    selectedMsgIds.add(id);
+  } else {
+    selectedMsgIds.delete(id);
+  }
+  updateMsgBulkBar();
+};
 
 function initMessagesSection() {
   document.querySelectorAll('.msg-filter-pill').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.msg-filter-pill').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      selectedMsgIds.clear();
       renderMessagesSection(btn.dataset.filter);
+    });
+  });
+
+  document.getElementById('msgSearchInput')?.addEventListener('input', e => {
+    msgSearchQuery = e.target.value;
+    renderMessagesSection();
+  });
+
+  document.getElementById('msgSelectAll')?.addEventListener('change', e => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.msg-row-cb').forEach(cb => {
+      cb.checked = checked;
+      const id = Number(cb.dataset.id);
+      if (id) {
+        if (checked) selectedMsgIds.add(id);
+        else selectedMsgIds.delete(id);
+      }
+    });
+    updateMsgBulkBar();
+  });
+
+  // Bulk Mark Read
+  document.getElementById('btnMsgBulkMarkRead')?.addEventListener('click', async () => {
+    if (!selectedMsgIds.size) return;
+    try {
+      await api.post('/api/messages/bulk-read', { ids: Array.from(selectedMsgIds), is_read: 1 });
+      toast(`تم تحديد ${selectedMsgIds.size} رسالة كمقروءة`);
+      selectedMsgIds.clear();
+      await renderMessagesSection();
+    } catch {
+      toast('تعذّر تحديث الرسائل', 'error');
+    }
+  });
+
+  // Bulk Mark Unread
+  document.getElementById('btnMsgBulkMarkUnread')?.addEventListener('click', async () => {
+    if (!selectedMsgIds.size) return;
+    try {
+      await api.post('/api/messages/bulk-read', { ids: Array.from(selectedMsgIds), is_read: 0 });
+      toast(`تم تحديد ${selectedMsgIds.size} رسالة كغير مقروءة`);
+      selectedMsgIds.clear();
+      await renderMessagesSection();
+    } catch {
+      toast('تعذّر تحديث الرسائل', 'error');
+    }
+  });
+
+  // Bulk Delete Selected
+  document.getElementById('btnMsgBulkDelete')?.addEventListener('click', () => {
+    if (!selectedMsgIds.size) return;
+    confirmDialog(`هل أنت متأكد من حذف ${selectedMsgIds.size} رسالة محددة نهائياً؟`, async () => {
+      try {
+        await api.post('/api/messages/bulk-delete', { ids: Array.from(selectedMsgIds) });
+        toast('تم حذف الرسائل المحددة بنجاح');
+        selectedMsgIds.clear();
+        await renderMessagesSection();
+      } catch {
+        toast('تعذّر حذف الرسائل', 'error');
+      }
+    });
+  });
+
+  // Delete All Messages
+  document.getElementById('btnMsgDeleteAll')?.addEventListener('click', () => {
+    confirmDialog('⚠️ تحذير: هل أنت متأكد تماماً من حذف جميع الرسائل الواردة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.', async () => {
+      try {
+        await api.post('/api/messages/bulk-delete', { all: true });
+        toast('تم حذف جميع الرسائل بنجاح');
+        selectedMsgIds.clear();
+        await renderMessagesSection();
+      } catch {
+        toast('تعذّر حذف الرسائل', 'error');
+      }
     });
   });
 }
@@ -2220,6 +2340,27 @@ function initManuscriptsSection() {
 let adminInboxEmails = [];
 let inboxFilterStatus = 'all';
 let inboxSearchQuery = '';
+let selectedInboxIds = new Set();
+
+function updateInboxBulkBar() {
+  const bar = document.getElementById('inboxBulkBar');
+  const countEl = document.getElementById('inboxSelectedCount');
+  const selectAll = document.getElementById('inboxSelectAll');
+  if (!bar || !countEl) return;
+
+  const count = selectedInboxIds.size;
+  countEl.textContent = count;
+  bar.style.display = count > 0 ? 'flex' : 'none';
+
+  if (selectAll) {
+    const visibleCheckboxes = document.querySelectorAll('.inbox-row-cb');
+    if (visibleCheckboxes.length > 0) {
+      selectAll.checked = Array.from(visibleCheckboxes).every(cb => cb.checked);
+    } else {
+      selectAll.checked = false;
+    }
+  }
+}
 
 async function renderInboxSection() {
   const tbody = document.getElementById('inboxTbody');
@@ -2253,23 +2394,28 @@ async function renderInboxSection() {
   await updateUnreadBadge();
 
   if (!adminInboxEmails.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:3rem">
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:3rem">
       <div style="font-size:2rem;margin-bottom:0.5rem">📭</div>
       <div>لا توجد رسائل واردة مطابقة</div>
       <div style="font-size:0.8rem;margin-top:0.4rem;color:var(--text-muted)">اضغط على زر "جلب وتحديث الرسائل" لفحص البريد من الخادم</div>
     </td></tr>`;
+    updateInboxBulkBar();
     return;
   }
 
   tbody.innerHTML = adminInboxEmails.map(em => {
     const isUnread = (em.is_read === 0 || em.is_read === false);
     const isStarred = (em.is_starred === 1 || em.is_starred === true);
+    const isChecked = selectedInboxIds.has(em.id);
     const dateStr = em.date ? new Date(em.date).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
     const initial = (em.from_name || em.from_email || 'U').charAt(0).toUpperCase();
     const snippet = (em.body_text || '').replace(/\s+/g, ' ').slice(0, 75);
 
     return `
-    <tr class="inbox-row ${isUnread ? 'unread-row' : ''}" style="${isUnread ? 'background:rgba(52,152,219,0.06);font-weight:600' : ''}">
+    <tr class="inbox-row ${isUnread ? 'unread-row' : ''}" style="${isChecked ? 'background:rgba(201,168,76,0.08);' : (isUnread ? 'background:rgba(52,152,219,0.06);font-weight:600' : '')}">
+      <td style="text-align:center">
+        <input type="checkbox" class="inbox-row-cb" data-id="${em.id}" ${isChecked ? 'checked' : ''} onchange="toggleInboxSelection(${em.id}, this.checked)" />
+      </td>
       <td style="text-align:center">
         <button onclick="toggleInboxStar(${em.id}, ${isStarred ? 1 : 0})" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:${isStarred ? '#f1c40f' : 'rgba(255,255,255,0.2)'}" title="${isStarred ? 'إزالة النجمة' : 'تمييز بنجمة'}">
           ${isStarred ? '★' : '☆'}
@@ -2309,7 +2455,18 @@ async function renderInboxSection() {
       </td>
     </tr>`;
   }).join('');
+
+  updateInboxBulkBar();
 }
+
+window.toggleInboxSelection = function(id, checked) {
+  if (checked) {
+    selectedInboxIds.add(id);
+  } else {
+    selectedInboxIds.delete(id);
+  }
+  updateInboxBulkBar();
+};
 
 window.openInboxReader = async function(id) {
   try {
@@ -2389,6 +2546,7 @@ window.deleteInboxEmail = function(id) {
       await api.del(`/api/inbox/${id}`);
       toast('تم حذف الرسالة بنجاح');
       closeInboxDrawer();
+      selectedInboxIds.delete(id);
       await renderInboxSection();
       await updateUnreadBadge();
     } catch {
@@ -2432,6 +2590,7 @@ function initInboxSection() {
       document.querySelectorAll('#sec-inbox .filter-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       inboxFilterStatus = btn.dataset.inboxFilter || 'all';
+      selectedInboxIds.clear();
       renderInboxSection();
     });
   });
@@ -2439,6 +2598,74 @@ function initInboxSection() {
   document.getElementById('inboxSearchInput')?.addEventListener('input', e => {
     inboxSearchQuery = e.target.value;
     renderInboxSection();
+  });
+
+  document.getElementById('inboxSelectAll')?.addEventListener('change', e => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.inbox-row-cb').forEach(cb => {
+      cb.checked = checked;
+      const id = Number(cb.dataset.id);
+      if (id) {
+        if (checked) selectedInboxIds.add(id);
+        else selectedInboxIds.delete(id);
+      }
+    });
+    updateInboxBulkBar();
+  });
+
+  // Bulk Mark Read
+  document.getElementById('btnInboxBulkMarkRead')?.addEventListener('click', async () => {
+    if (!selectedInboxIds.size) return;
+    try {
+      await api.post('/api/inbox/bulk-read', { ids: Array.from(selectedInboxIds), is_read: 1 });
+      toast(`تم تحديد ${selectedInboxIds.size} رسالة كمقروءة`);
+      selectedInboxIds.clear();
+      await renderInboxSection();
+    } catch {
+      toast('تعذّر تحديث الرسائل', 'error');
+    }
+  });
+
+  // Bulk Mark Unread
+  document.getElementById('btnInboxBulkMarkUnread')?.addEventListener('click', async () => {
+    if (!selectedInboxIds.size) return;
+    try {
+      await api.post('/api/inbox/bulk-read', { ids: Array.from(selectedInboxIds), is_read: 0 });
+      toast(`تم تحديد ${selectedInboxIds.size} رسالة كغير مقروءة`);
+      selectedInboxIds.clear();
+      await renderInboxSection();
+    } catch {
+      toast('تعذّر تحديث الرسائل', 'error');
+    }
+  });
+
+  // Bulk Delete Selected
+  document.getElementById('btnInboxBulkDelete')?.addEventListener('click', () => {
+    if (!selectedInboxIds.size) return;
+    confirmDialog(`هل أنت متأكد من حذف ${selectedInboxIds.size} رسالة محددة نهائياً؟`, async () => {
+      try {
+        await api.post('/api/inbox/bulk-delete', { ids: Array.from(selectedInboxIds) });
+        toast('تم حذف الرسائل المحددة بنجاح');
+        selectedInboxIds.clear();
+        await renderInboxSection();
+      } catch {
+        toast('تعذّر حذف الرسائل', 'error');
+      }
+    });
+  });
+
+  // Delete All Emails
+  document.getElementById('btnInboxDeleteAll')?.addEventListener('click', () => {
+    confirmDialog('⚠️ تحذير: هل أنت متأكد تماماً من حذف جميع الرسائل الواردة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.', async () => {
+      try {
+        await api.post('/api/inbox/bulk-delete', { all: true });
+        toast('تم حذف جميع الرسائل بنجاح');
+        selectedInboxIds.clear();
+        await renderInboxSection();
+      } catch {
+        toast('تعذّر حذف الرسائل', 'error');
+      }
+    });
   });
 
   document.getElementById('btnSyncInbox')?.addEventListener('click', syncInboxEmails);

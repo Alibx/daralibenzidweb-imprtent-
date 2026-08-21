@@ -67,4 +67,43 @@ router.delete("/messages/:id", async (req, res) => {
   }
 });
 
+// BULK DELETE MESSAGES
+router.post("/messages/bulk-delete", async (req, res) => {
+  try {
+    const { ids, all } = req.body || {};
+    if (all) {
+      await query("DELETE FROM messages");
+      return res.json({ success: true, message: "تم حذف جميع الرسائل بنجاح" });
+    }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "يرجى تحديد الرسائل المراد حذفها" });
+    }
+    const placeholders = ids.map(() => "?").join(",");
+    await query(`DELETE FROM messages WHERE id IN (${placeholders})`, ids);
+    res.json({ success: true, message: `تم حذف ${ids.length} رسالة بنجاح` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to bulk delete messages: " + err.message });
+  }
+});
+
+// BULK MARK READ/UNREAD MESSAGES
+router.post("/messages/bulk-read", async (req, res) => {
+  try {
+    const { ids, is_read, all } = req.body || {};
+    const val = is_read ? 1 : 0;
+    if (all) {
+      await query("UPDATE messages SET is_read = ?", [val]);
+      return res.json({ success: true, message: "تم تحديث حالة جميع الرسائل" });
+    }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "يرجى تحديد الرسائل المراد تعديلها" });
+    }
+    const placeholders = ids.map(() => "?").join(",");
+    await query(`UPDATE messages SET is_read = ? WHERE id IN (${placeholders})`, [val, ...ids]);
+    res.json({ success: true, message: `تم تحديث حالة ${ids.length} رسالة` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to bulk update read status: " + err.message });
+  }
+});
+
 export default router;

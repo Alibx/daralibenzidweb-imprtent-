@@ -128,6 +128,45 @@ router.delete("/inbox/:id", async (req, res) => {
   }
 });
 
+// BULK DELETE INBOX EMAILS
+router.post("/inbox/bulk-delete", async (req, res) => {
+  try {
+    const { ids, all } = req.body || {};
+    if (all) {
+      await query("DELETE FROM inbox_emails");
+      return res.json({ success: true, message: "تم حذف جميع الرسائل الواردة بنجاح" });
+    }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "يرجى تحديد الرسائل المراد حذفها" });
+    }
+    const placeholders = ids.map(() => "?").join(",");
+    await query(`DELETE FROM inbox_emails WHERE id IN (${placeholders})`, ids);
+    res.json({ success: true, message: `تم حذف ${ids.length} رسالة بنجاح` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to bulk delete emails: " + err.message });
+  }
+});
+
+// BULK MARK READ/UNREAD INBOX EMAILS
+router.post("/inbox/bulk-read", async (req, res) => {
+  try {
+    const { ids, is_read, all } = req.body || {};
+    const val = is_read ? 1 : 0;
+    if (all) {
+      await query("UPDATE inbox_emails SET is_read = ?", [val]);
+      return res.json({ success: true, message: "تم تحديث حالة جميع الرسائل" });
+    }
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "يرجى تحديد الرسائل المراد تعديلها" });
+    }
+    const placeholders = ids.map(() => "?").join(",");
+    await query(`UPDATE inbox_emails SET is_read = ? WHERE id IN (${placeholders})`, [val, ...ids]);
+    res.json({ success: true, message: `تم تحديث حالة ${ids.length} رسالة` });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to bulk update read status: " + err.message });
+  }
+});
+
 // GET IMAP Settings
 router.get("/inbox/settings/config", async (_req, res) => {
   try {
