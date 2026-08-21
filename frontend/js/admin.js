@@ -851,8 +851,9 @@ async function renderMessagesSection(filter) {
         <td>${dateStr}</td>
         <td>${isRead ? '<span class="status-badge status-published">مقروء</span>' : '<span class="unread-badge">جديد</span>'}</td>
         <td>
-          <div class="action-btns">
+          <div class="action-btns" style="display:flex;gap:0.35rem">
             <button class="btn-view" onclick="toggleMsgDetail(${m.id})">عرض</button>
+            <button class="btn-edit" style="background:#27ae60;border-color:#27ae60;color:#fff;font-size:0.75rem;padding:0.25rem 0.6rem" onclick="openEmailComposer({ recipientName: '${escHtml(m.name)}', recipientEmail: '${escHtml(m.email)}', subject: 'رد بخصوص: ${escHtml(m.subject)} — دار علي بن زيد', referenceType: 'message', referenceId: ${m.id}, referenceTitle: '${escHtml(m.subject)}', defaultTemplate: 'msg_ack' })" title="إرسال رد رسمي عبر الإيميل">✉️ رد</button>
             <button class="btn-del"  onclick="deleteMsg(${m.id})">🗑️</button>
           </div>
         </td>
@@ -861,7 +862,8 @@ async function renderMessagesSection(filter) {
         <td colspan="6">
           <div class="message-detail" id="msg-detail-${m.id}">
             <div class="message-text-box">${escHtml(m.message)}</div>
-            <div class="msg-actions">
+            <div class="msg-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="btn-save" style="background:#27ae60;border-color:#27ae60" onclick="openEmailComposer({ recipientName: '${escHtml(m.name)}', recipientEmail: '${escHtml(m.email)}', subject: 'رد بخصوص: ${escHtml(m.subject)} — دار علي بن زيد', referenceType: 'message', referenceId: ${m.id}, referenceTitle: '${escHtml(m.subject)}', defaultTemplate: 'msg_ack' })">✉️ رد عبر الإيميل الرسمي للدار</button>
               ${isRead
           ? `<button class="btn-mark-unread" onclick="markMsg(${m.id}, false)">تحديد كغير مقروء</button>`
           : `<button class="btn-mark-read"   onclick="markMsg(${m.id}, true)">تحديد كمقروء</button>`}
@@ -1092,7 +1094,22 @@ async function renderSettingsSection() {
     if (activeEl) {
       activeEl.checked = s.announcement_active !== 0 && s.announcement_active !== '0';
     }
-  } catch { /* silently skip — form stays blank */ }
+  } catch { /* silently skip */ }
+
+  // Load SMTP Settings
+  try {
+    const smtp = await api.get('/api/email/settings');
+    if (smtp) {
+      if (document.getElementById('smtpHostInput')) document.getElementById('smtpHostInput').value = smtp.smtp_host || '';
+      if (document.getElementById('smtpPortInput')) document.getElementById('smtpPortInput').value = smtp.smtp_port || '465';
+      if (document.getElementById('smtpUserInput')) document.getElementById('smtpUserInput').value = smtp.smtp_user || '';
+      if (document.getElementById('smtpFromNameInput')) document.getElementById('smtpFromNameInput').value = smtp.smtp_from_name || 'دار علي بن زيد للطباعة والنشر';
+      if (document.getElementById('smtpFromEmailInput')) document.getElementById('smtpFromEmailInput').value = smtp.smtp_from_email || smtp.smtp_user || '';
+      if (smtp.smtp_pass_set) {
+        document.getElementById('smtpPassInput').placeholder = '•••••••• (كلمة المرور محفوظة مسبقاً)';
+      }
+    }
+  } catch { /* silent */ }
 }
 
 function initSettingsSection() {
@@ -1116,6 +1133,73 @@ function initSettingsSection() {
       toast('تعذّر حفظ الإعدادات', 'error');
     } finally {
       btn.disabled = false;
+    }
+  });
+
+  // Save SMTP Settings
+  document.getElementById('smtpSettingsForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const host = document.getElementById('smtpHostInput')?.value.trim();
+    const port = Number(document.getElementById('smtpPortInput')?.value || 465);
+    const user = document.getElementById('smtpUserInput')?.value.trim();
+    const pass = document.getElementById('smtpPassInput')?.value.trim();
+    const fromName = document.getElementById('smtpFromNameInput')?.value.trim();
+    const fromEmail = document.getElementById('smtpFromEmailInput')?.value.trim();
+
+    if (!host || !user) {
+      toast('يرجى كتابة خادم البريد (Host) والبريد الإلكتروني للدار', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSaveSmtp');
+    if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الحفظ...'; }
+
+    try {
+      const payload = {
+        smtp_host: host,
+        smtp_port: port,
+        smtp_user: user,
+        smtp_from_name: fromName || 'دار علي بن زيد للطباعة والنشر',
+        smtp_from_email: fromEmail || user
+      };
+      if (pass) payload.smtp_pass = pass;
+
+      await api.put('/api/email/settings', payload);
+      toast('✅ تم حفظ إعدادات البريد الرسمي للدار بنجاح');
+    } catch (err) {
+      toast('تعذّر حفظ إعدادات البريد: ' + (err.message || ''), 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '💾 حفظ إعدادات البريد'; }
+    }
+  });
+
+  // Test SMTP Settings
+  document.getElementById('btnTestSmtp')?.addEventListener('click', async () => {
+    const host = document.getElementById('smtpHostInput')?.value.trim();
+    const port = Number(document.getElementById('smtpPortInput')?.value || 465);
+    const user = document.getElementById('smtpUserInput')?.value.trim();
+    const pass = document.getElementById('smtpPassInput')?.value.trim();
+    const fromName = document.getElementById('smtpFromNameInput')?.value.trim();
+    const fromEmail = document.getElementById('smtpFromEmailInput')?.value.trim();
+
+    const feedback = document.getElementById('smtpStatusFeedback');
+    if (feedback) feedback.innerHTML = '<span style="color:var(--gold)">⏳ جارٍ الاتصال بالخادم وإرسال بريد الاختبار...</span>';
+
+    try {
+      const res = await api.post('/api/email/test', {
+        smtp_host: host,
+        smtp_port: port,
+        smtp_user: user,
+        smtp_pass: pass,
+        smtp_from_name: fromName,
+        smtp_from_email: fromEmail,
+        test_recipient: user
+      });
+      toast('🎉 ' + res.message);
+      if (feedback) feedback.innerHTML = `<span style="color:var(--success)">✅ ${res.message}</span>`;
+    } catch (err) {
+      toast('فشل الاختبار: ' + (err.message || ''), 'error');
+      if (feedback) feedback.innerHTML = `<span style="color:var(--danger)">❌ ${err.message || 'فشل الاتصال بخادم البريد'}</span>`;
     }
   });
 
@@ -1853,9 +1937,10 @@ async function renderManuscriptsSection() {
       <td>
         <div style="font-weight:bold;color:var(--text-light)">${escHtml(m.author_name)}</div>
         <div style="font-size:0.78rem;color:var(--text-muted)">${escHtml(m.wilaya || '—')}</div>
-        <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.25rem">
+        <div style="display:flex;gap:0.4rem;align-items:center;margin-top:0.25rem;flex-wrap:wrap">
           <a href="tel:${escHtml(m.author_phone)}" style="color:var(--gold);font-size:0.82rem;text-decoration:none">📞 ${escHtml(m.author_phone)}</a>
           <a href="https://wa.me/${waPhone}?text=${encodeURIComponent(`مرحباً أستاذ ${m.author_name}، بخصوص طلب نشر مخطوطتك (${m.book_title}) لدى دار علي بن زيد للنشر:`)}" target="_blank" rel="noopener" style="background:#25D366;color:#fff;border-radius:4px;padding:2px 6px;font-size:0.75rem;text-decoration:none">واتساب</a>
+          <button class="btn-edit" style="background:#27ae60;border-color:#27ae60;color:#fff;font-size:0.72rem;padding:2px 6px" onclick="openEmailComposer({ recipientName: '${escHtml(m.author_name)}', recipientEmail: '', subject: 'بخصوص طلب نشر مخطوطتكم (${escHtml(m.book_title)}) — دار علي بن زيد', referenceType: 'manuscript', referenceId: ${m.id}, referenceTitle: '${escHtml(m.book_title)}', defaultTemplate: 'manu_review' })" title="إرسال بريد رسمي للمؤلف">✉️ بريد</button>
         </div>
       </td>
       <td>
@@ -2145,6 +2230,135 @@ function startLivePolling() {
   }, 20000); // Check every 20 seconds
 }
 
+// ─── EMAIL COMPOSER CONTROLLER & TEMPLATES ─────────────────────────────────────
+const EMAIL_TEMPLATES = {
+  msg_ack: {
+    subject: (name, ref) => `رد بخصوص: ${ref || 'استفساركم'} — دار علي بن زيد للطباعة والنشر`,
+    body: (name, ref) => `السلام عليكم ورحمة الله وبركاته،\nالأستاذ(ة) الفاضل(ة) ${name || ''}،\n\nنشكركم على تواصلكم مع دار علي بن زيد للطباعة والنشر.\n\nنود إفادتكم بأننا تلقينا رسالتكم الكريمة بخصوص (${ref || 'استفساركم'}) باهتمام، ويسرنا الرد كالتالي:\n\n[اكتب نص الرد والتوضيح هنا...]\n\nنسعد دوماً بخدمتكم ويسرنا تواصلكم الدائم معنا.`
+  },
+  manu_review: {
+    subject: (name, ref) => `إشعار استلام مخطوطتكم (${ref || 'طلب النشر'}) وقيد القراءة والتحكيم — دار علي بن زيد`,
+    body: (name, ref) => `السلام عليكم ورحمة الله وبركاته،\nالأستاذ(ة) الفاضل(ة) ${name || ''}،\n\nنود إعلامكم بأننا استلمنا طلب نشر مخطوطتكم الكريمة المعنونة بـ (${ref || 'المخطوطة'}) باهتمام بالغ.\n\nتم إحالة الملف إلى اللجنة العلمية ولجنة القراءة والتحكيم بالدار لفحصه ودراسة إمكانية إدراجه ضمن خطة النشر والطباعة للموسم القادم.\n\nسنوافيكم بالتقرير والرد النهائي في أقرب الآجال فور استكمال تقرير القراءة.\n\nشاكرين لكم ثقتكم واختياركم لدار علي بن زيد للنشر والتوزيع.`
+  },
+  manu_accept: {
+    subject: (name, ref) => `تهانينا! الموافقة المبدئية على نشر مخطوطتكم (${ref || 'المخطوطة'}) — دار علي بن زيد`,
+    body: (name, ref) => `السلام عليكم ورحمة الله وبركاته،\nالأستاذ(ة) الفاضل(ة) ${name || ''}،\n\nيسر إدارة دار علي بن زيد للطباعة والنشر إبلاغكم بصدور الموافقة المبدئية على نشر وطباعة مخطوطتكم القيمة المعنونة بـ (${ref || 'المخطوطة'})، وذلك بعد التقييم الإيجابي من قبل لجنة القراءة والتحكيم وإشادتها بالقيمة المعرفية للعمل.\n\nيرجى تزويدنا بالنسخة الكاملة بصيغة Word لمباشرة إجراءات التدقيق اللغوي، التنسيق والإخراج الفني، وتصميم الغلاف.\n\nيسعدنا جداً التعاون معكم لتقديم هذا الإصدار المتميز للقراء.`
+  },
+  manu_contract: {
+    subject: (name, ref) => `دعوة لتوقيع عقد النشر والتوزيع لمخطوطة (${ref || 'المخطوطة'}) — دار علي بن زيد`,
+    body: (name, ref) => `السلام عليكم ورحمة الله وبركاته،\nالأستاذ(ة) الفاضل(ة) ${name || ''}،\n\nتتويجاً للاتفاق والتنسيق بخصوص نشر عملكم الكريم (${ref || 'المخطوطة'})، يسرنا دعوتكم لجلسة عمل وتوقيع عقد النشر والتوزيع وضبط الخطة الزمنية للمراحل الفنية والتسويقية.\n\nيرجى التواصل معنا لتحديد الموعد والمكان الأنسب لكم، أو إتمام التوقيع الإلكتروني إن كنتم خارج الولاية.\n\nأهلاً ومرحباً بكم في أسرة مؤلفي دار علي بن زيد.`
+  },
+  manu_revisions: {
+    subject: (name, ref) => `ملاحظات وتعديلات مقترحة على مخطوطة (${ref || 'المخطوطة'}) — دار علي بن زيد`,
+    body: (name, ref) => `السلام عليكم ورحمة الله وبركاته،\nالأستاذ(ة) الفاضل(ة) ${name || ''}،\n\nبعد دراسة مخطوطتكم الكريمة (${ref || 'المخطوطة'}) من طرف لجنة القراءة، نود إحاطتكم ببعض الملاحظات والتعديلات المقترحة لتطوير العمل وتجهيزه بأفضل صورة للنشر:\n\n[اكتب الملاحظات والتعديلات المطلوبة هنا...]\n\nيرجى إرسال النسخة بعد التعديل لمواصلة إجراءات النشر.`
+  },
+  manu_reject: {
+    subject: (name, ref) => `بخصوص طلب نشر مخطوطة (${ref || 'المخطوطة'}) — دار علي بن زيد للطباعة والنشر`,
+    body: (name, ref) => `السلام عليكم ورحمة الله وبركاته،\nالأستاذ(ة) الفاضل(ة) ${name || ''}،\n\nنشكركم جزيل الشكر على ثقتكم الغالية واختياركم لدار علي بن زيد لعرض مخطوطتكم الكريمة (${ref || 'المخطوطة'}).\n\nنأسف لإبلاغكم بأنه يتعذر علينا إدراج هذا العمل ضمن خطة النشر للموسم الحالي نظراً لاكتمال الحصة المقررة لهذا المجال.\n\nنتمنى لكم دوام التوفيق والنجاح في مسيرتكم العلمية والإبداعية، ويسرنا الاطلاع على أعمالكم القادمة مستقبلاً.`
+  }
+};
+
+window.openEmailComposer = function({
+  recipientName = '',
+  recipientEmail = '',
+  subject = '',
+  referenceType = '',
+  referenceId = '',
+  referenceTitle = '',
+  defaultTemplate = ''
+}) {
+  document.getElementById('emailRecipientName').value = recipientName;
+  document.getElementById('emailRecipientAddress').value = recipientEmail;
+  document.getElementById('emailRefType').value = referenceType;
+  document.getElementById('emailRefId').value = referenceId;
+
+  const refBox = document.getElementById('emailReferenceBox');
+  const refTxt = document.getElementById('emailReferenceText');
+  if (referenceTitle) {
+    if (refTxt) refTxt.textContent = referenceTitle;
+    if (refBox) refBox.style.display = 'block';
+  } else {
+    if (refBox) refBox.style.display = 'none';
+  }
+
+  const tplSelect = document.getElementById('emailTemplateSelect');
+  if (tplSelect) {
+    tplSelect.value = defaultTemplate || '';
+    if (defaultTemplate && EMAIL_TEMPLATES[defaultTemplate]) {
+      const t = EMAIL_TEMPLATES[defaultTemplate];
+      document.getElementById('emailSubjectInput').value = t.subject(recipientName, referenceTitle);
+      document.getElementById('emailBodyInput').value = t.body(recipientName, referenceTitle);
+    } else {
+      document.getElementById('emailSubjectInput').value = subject;
+      document.getElementById('emailBodyInput').value = '';
+    }
+  }
+
+  const modal = document.getElementById('emailComposeModal');
+  if (modal) modal.style.display = 'flex';
+};
+
+function initEmailComposer() {
+  const modal = document.getElementById('emailComposeModal');
+  const closeModal = () => { if (modal) modal.style.display = 'none'; };
+
+  document.getElementById('emailModalClose')?.addEventListener('click', closeModal);
+  document.getElementById('btnEmailCancel')?.addEventListener('click', closeModal);
+
+  // Template select change
+  document.getElementById('emailTemplateSelect')?.addEventListener('change', e => {
+    const key = e.target.value;
+    if (!key || !EMAIL_TEMPLATES[key]) return;
+    const name = document.getElementById('emailRecipientName')?.value.trim();
+    const ref = document.getElementById('emailReferenceText')?.textContent || '';
+    const t = EMAIL_TEMPLATES[key];
+    document.getElementById('emailSubjectInput').value = t.subject(name, ref);
+    document.getElementById('emailBodyInput').value = t.body(name, ref);
+  });
+
+  // Form submit
+  document.getElementById('emailComposeForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const to = document.getElementById('emailRecipientAddress')?.value.trim();
+    const to_name = document.getElementById('emailRecipientName')?.value.trim();
+    const subject = document.getElementById('emailSubjectInput')?.value.trim();
+    const message = document.getElementById('emailBodyInput')?.value.trim();
+    const reference_type = document.getElementById('emailRefType')?.value;
+    const reference_id = document.getElementById('emailRefId')?.value;
+    const reference_title = document.getElementById('emailReferenceText')?.textContent;
+
+    if (!to || !subject || !message) {
+      toast('يرجى كتابة البريد المستلم، عنوان الرسالة، ونص الرسالة', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSendEmailSubmit');
+    btn.disabled = true;
+    btn.textContent = 'جارٍ إرسال البريد... ✉️';
+
+    try {
+      const res = await api.post('/api/email/send', {
+        to,
+        to_name,
+        subject,
+        message,
+        reference_type,
+        reference_id,
+        reference_title
+      });
+      toast(`🎉 ${res.message}`);
+      closeModal();
+      if (reference_type === 'manuscript') renderManuscriptsSection();
+      if (reference_type === 'message') renderMessagesSection();
+    } catch (err) {
+      toast('تعذّر إرسال البريد: ' + (err.message || 'تأكد من ضبط إعدادات SMTP'), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🚀 إرسال البريد الإلكتروني الآن';
+    }
+  });
+}
+
 // ─── BOOT ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
@@ -2164,6 +2378,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTestimonialsSection();
   initContactSection();
   initSettingsSection();
+  initEmailComposer();
 });
 
 

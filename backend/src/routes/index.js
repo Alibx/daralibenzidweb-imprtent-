@@ -15,6 +15,7 @@ import couponsRouter from "./coupons.js";
 import deliveryRouter from "./delivery.js";
 import manuscriptsRouter from "./manuscripts.js";
 import reviewsRouter from "./reviews.js";
+import emailRouter from "./email.js";
 
 const router = Router();
 
@@ -34,5 +35,6 @@ router.use(couponsRouter);
 router.use(deliveryRouter);
 router.use(manuscriptsRouter);
 router.use(reviewsRouter);
+router.use(emailRouter);
 
 export default router;
