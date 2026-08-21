@@ -28,11 +28,18 @@ export async function ensureSmtpColumns() {
 }
 
 export async function getSmtpConfig() {
-  await ensureSmtpColumns();
   try {
-    const rows = await query("SELECT smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from_name, smtp_from_email FROM settings LIMIT 1");
+    await ensureSmtpColumns();
+    const rows = await query("SELECT * FROM settings LIMIT 1");
     if (rows && rows[0]) {
-      return rows[0];
+      return {
+        smtp_host: rows[0].smtp_host || process.env.SMTP_HOST || "",
+        smtp_port: Number(rows[0].smtp_port || process.env.SMTP_PORT) || 465,
+        smtp_user: rows[0].smtp_user || process.env.SMTP_USER || "",
+        smtp_pass: rows[0].smtp_pass || process.env.SMTP_PASS || "",
+        smtp_from_name: rows[0].smtp_from_name || process.env.SMTP_FROM_NAME || "دار علي بن زيد للطباعة والنشر",
+        smtp_from_email: rows[0].smtp_from_email || process.env.SMTP_FROM_EMAIL || rows[0].smtp_user || "",
+      };
     }
   } catch (err) {
     console.warn("getSmtpConfig db error:", err.message);

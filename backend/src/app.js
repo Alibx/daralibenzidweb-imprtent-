@@ -30,7 +30,7 @@ app.get("/", (_req, res) => {
 // Global Error Handler
 app.use((err, _req, res, _next) => {
   console.error("Unhandled Error:", err);
-  res.status(500).json({ error: "Internal Server Error" });
+  res.status(500).json({ error: err.message || "Internal Server Error" });
 });
 
 export default app;
