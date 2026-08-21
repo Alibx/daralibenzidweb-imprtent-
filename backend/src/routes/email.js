@@ -39,7 +39,7 @@ router.put("/email/settings", async (req, res) => {
       smtp_pass,
       smtp_from_name,
       smtp_from_email
-    } = req.body;
+    } = req.body || {};
 
     const existing = await query("SELECT id, smtp_pass FROM settings LIMIT 1");
     const portNum = Number(smtp_port) || 465;
@@ -77,7 +77,7 @@ router.put("/email/settings", async (req, res) => {
 // TEST SMTP Connection & Send test email
 router.post("/email/test", async (req, res) => {
   try {
-    const { test_recipient, smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from_name, smtp_from_email } = req.body;
+    const { test_recipient, smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from_name, smtp_from_email } = req.body || {};
 
     const config = (smtp_host && smtp_user)
       ? {
@@ -132,7 +132,7 @@ router.post("/email/send", async (req, res) => {
       reference_title,
       reference_type, // 'manuscript' | 'message' | 'custom'
       reference_id
-    } = req.body;
+    } = req.body || {};
 
     if (!to || !subject || !message) {
       return res.status(400).json({ error: "البريد المستلم، عنوان الرسالة، ونص الرسالة مطلوبين." });
