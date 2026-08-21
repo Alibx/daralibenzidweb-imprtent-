@@ -86,23 +86,51 @@ export async function sendMailUnified(config, { to, subject, html, text, fromAdd
 
   // 1. Resend API (HTTP Port 443 - zero blockages on Render / cloud)
   if (host === 'resend' || apiKey.startsWith('re_')) {
-    const fromEmail = config.smtp_from_email || 'onboarding@resend.dev';
     const fromName = config.smtp_from_name || 'دار علي بن زيد للنشر';
-    const res = await fetch('https://api.resend.com/emails', {
+    const primaryFrom = (config.smtp_from_email && !config.smtp_from_email.includes('resend.dev'))
+      ? config.smtp_from_email
+      : 'onboarding@resend.dev';
+    const replyTo = config.smtp_user || config.smtp_from_email || 'info@daralibenzid.dz';
+
+    // First attempt with custom domain
+    let res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: `${fromName} <${fromEmail}>`,
+        from: `${fromName} <${primaryFrom}>`,
         to: Array.isArray(to) ? to : [to],
+        reply_to: replyTo,
         subject,
         html,
         text: text || ''
       })
     });
-    const data = await res.json();
+
+    let data = await res.json();
+
+    // If domain is not verified yet, fallback to onboarding@resend.dev with reply_to
+    if (!res.ok && primaryFrom !== 'onboarding@resend.dev' && (data.message || '').toLowerCase().includes('domain')) {
+      res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: `${fromName} <onboarding@resend.dev>`,
+          to: Array.isArray(to) ? to : [to],
+          reply_to: replyTo,
+          subject,
+          html,
+          text: text || ''
+        })
+      });
+      data = await res.json();
+    }
+
     if (!res.ok) {
       throw new Error(data.message || 'فشل الإرسال عبر Resend API: تحقق من صحة المفتاح');
     }
