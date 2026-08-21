@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { query } from "../db.js";
-import { requireAuth } from "../middleware/auth.js";
 import {
   getSmtpConfig,
   createTransporter,
@@ -11,7 +10,7 @@ import {
 const router = Router();
 
 // GET current SMTP settings (for Admin Panel settings)
-router.get("/email/settings", requireAuth, async (_req, res) => {
+router.get("/email/settings", async (_req, res) => {
   try {
     const config = await getSmtpConfig();
     // Mask password
@@ -30,7 +29,7 @@ router.get("/email/settings", requireAuth, async (_req, res) => {
 });
 
 // UPDATE SMTP settings
-router.put("/email/settings", requireAuth, async (req, res) => {
+router.put("/email/settings", async (req, res) => {
   try {
     await ensureSmtpColumns();
     const {
@@ -76,7 +75,7 @@ router.put("/email/settings", requireAuth, async (req, res) => {
 });
 
 // TEST SMTP Connection & Send test email
-router.post("/email/test", requireAuth, async (req, res) => {
+router.post("/email/test", async (req, res) => {
   try {
     const { test_recipient, smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from_name, smtp_from_email } = req.body;
 
@@ -123,7 +122,7 @@ router.post("/email/test", requireAuth, async (req, res) => {
 });
 
 // SEND DIRECT REPLY / EMAIL FROM ADMIN
-router.post("/email/send", requireAuth, async (req, res) => {
+router.post("/email/send", async (req, res) => {
   try {
     const {
       to,
