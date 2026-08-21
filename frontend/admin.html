@@ -90,6 +90,7 @@
           <div class="logo-sub">للطباعة والنشر — لوحة التحكم</div>
         </div>
         <nav class="sidebar-nav">
+          <div style="padding:0.4rem 0.8rem;font-size:0.72rem;color:var(--gold);font-weight:bold;letter-spacing:0.5px">📦 العمليات والطلبات</div>
           <button class="sidebar-link active" data-section="dashboard" data-role-access="admin">
             <span class="link-icon">📊</span> لوحة الإحصاء
           </button>
@@ -101,15 +102,17 @@
             <span class="link-icon">📑</span> طلبات النشر والمخطوطات
             <span id="manuscriptBadge" class="sidebar-badge" style="display: none; background: #e67e22; color: #fff; font-weight: bold">0</span>
           </button>
+          <button class="sidebar-link" data-section="messages" data-role-access="admin">
+            <span class="link-icon">📣</span> الرسائل الواردة
+            <span id="msgBadge" class="sidebar-badge" style="display: none"></span>
+          </button>
+
+          <div style="padding:0.6rem 0.8rem 0.2rem;font-size:0.72rem;color:var(--gold);font-weight:bold;letter-spacing:0.5px;border-top:1px solid rgba(255,255,255,0.06);margin-top:0.4rem">📚 المتجر والكتب</div>
           <button class="sidebar-link" data-section="books" data-role-access="admin">
             <span class="link-icon">📚</span> إدارة الكتب
           </button>
           <button class="sidebar-link" data-section="categories" data-role-access="admin">
             <span class="link-icon">🏷️</span> إدارة التصنيفات
-          </button>
-          <button class="sidebar-link" data-section="reviews" data-role-access="admin">
-            <span class="link-icon">⭐</span> تقييمات ومراجعات الكتب
-            <span id="reviewsBadge" class="sidebar-badge" style="display: none; background: #9b59b6; color: #fff; font-weight: bold">0</span>
           </button>
           <button class="sidebar-link" data-section="coupons" data-role-access="all">
             <span class="link-icon">🎟️</span> أكواد الخصم
@@ -117,24 +120,22 @@
           <button class="sidebar-link" data-section="delivery" data-role-access="all">
             <span class="link-icon">🚚</span> أسعار التوصيل (58 ولاية)
           </button>
-          <button class="sidebar-link" data-section="staff" data-role-access="admin">
-            <span class="link-icon">👥</span> إدارة الموظفين
-          </button>
+
+          <div style="padding:0.6rem 0.8rem 0.2rem;font-size:0.72rem;color:var(--gold);font-weight:bold;letter-spacing:0.5px;border-top:1px solid rgba(255,255,255,0.06);margin-top:0.4rem">⚙️ الموقع والإعدادات</div>
           <button class="sidebar-link" data-section="about" data-role-access="admin">
             <span class="link-icon">ℹ️</span> من نحن
           </button>
-          <button class="sidebar-link" data-section="messages" data-role-access="admin">
-            <span class="link-icon">📣</span> الرسائل الواردة
-            <span id="msgBadge" class="sidebar-badge" style="display: none"></span>
-          </button>
           <button class="sidebar-link" data-section="testimonials" data-role-access="admin">
-            <span class="link-icon">⭐</span> الشهادات
+            <span class="link-icon">⭐</span> آراء وشهادات القراء
           </button>
           <button class="sidebar-link" data-section="contact" data-role-access="admin">
             <span class="link-icon">📞</span> معلومات التواصل
           </button>
+          <button class="sidebar-link" data-section="staff" data-role-access="admin">
+            <span class="link-icon">👥</span> إدارة الموظفين
+          </button>
           <button class="sidebar-link" data-section="settings" data-role-access="admin">
-            <span class="link-icon">⚙️</span> الإعدادات العامة
+            <span class="link-icon">⚙️</span> الإعدادات العامة والبريد
           </button>
         </nav>
         <div class="sidebar-footer">
@@ -660,42 +661,7 @@
             </div>
           </div>
 
-          <!-- ── SECTION: REVIEWS (تقييمات ومراجعات الكتب) ── -->
-          <div id="sec-reviews" class="admin-section">
-            <div class="toolbar" style="flex-wrap:wrap;gap:0.75rem">
-              <div class="search-box" style="flex:1;min-width:260px">
-                🔍
-                <input
-                  type="search"
-                  id="reviewsSearch"
-                  placeholder="ابحث باسم القارئ، الكتاب، أو نص التقييم..."
-                />
-              </div>
-              <div class="order-filter-btns" style="display:flex;gap:0.4rem">
-                <button class="filter-tab active" data-review-status="all">الكل</button>
-                <button class="filter-tab" data-review-status="pending">بانتظار الموافقة ⏳</button>
-                <button class="filter-tab" data-review-status="approved">المعتمدة والمنشورة ✅</button>
-              </div>
-            </div>
 
-            <div class="table-card">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>تاريخ التقييم</th>
-                    <th>الكتاب المستهدف</th>
-                    <th>اسم القارئ</th>
-                    <th>التقييم بالنجوم</th>
-                    <th>نص المراجعة</th>
-                    <th>حالة النشر</th>
-                    <th>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody id="reviewsTbody"></tbody>
-              </table>
-            </div>
-          </div>
 
           <!-- ── SECTION: COUPONS ── -->
           <div id="sec-coupons" class="admin-section">
