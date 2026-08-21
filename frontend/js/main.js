@@ -37,43 +37,6 @@ function resolveMediaUrl(url) {
   return apiBase.replace(/\/+$/, '') + '/' + url.replace(/^\/+/, '');
 }
 
-// ─── ANNOUNCEMENT BAR ─────────────────────────────────────────────────────────
-function renderAnnouncement(s = {}) {
-  const bar = document.getElementById('announcementBar');
-  const textEl = document.getElementById('announcementText');
-  const linkEl = document.getElementById('announcementLink');
-  const closeBtn = document.getElementById('announcementClose');
-  if (!bar) return;
-
-  if (sessionStorage.getItem('dar_announcement_dismissed') === '1') {
-    bar.style.display = 'none';
-    return;
-  }
-
-  const isActive = s.announcement_active !== 0 && s.announcement_active !== '0';
-  const text = s.announcement_text || '📚 مرحباً بكم في دار علي بن زيد للنشر والتوزيع — شحن متوفر لجميع الـ 58 ولاية جزائرية! 🚚';
-
-  if (isActive && text) {
-    if (textEl) textEl.textContent = text;
-    if (linkEl) {
-      if (s.announcement_link) {
-        linkEl.href = s.announcement_link;
-        linkEl.style.display = 'inline-block';
-      } else {
-        linkEl.style.display = 'none';
-      }
-    }
-    bar.style.display = 'flex';
-  } else {
-    bar.style.display = 'none';
-  }
-
-  closeBtn?.addEventListener('click', () => {
-    bar.style.display = 'none';
-    sessionStorage.setItem('dar_announcement_dismissed', '1');
-  });
-}
-
 // ─── SHOPPING CART STATE & DRAWER ─────────────────────────────────────────────
 function saveCart() {
   localStorage.setItem('dar_cart', JSON.stringify(cart));
@@ -352,7 +315,7 @@ function renderBooks(books) {
       : `<div class="book-price-tag"><span class="price-current">${price} دج</span></div>`;
 
     return `
-    <article class="book-card fade-in">
+    <article class="book-card fade-in" style="cursor:pointer" onclick="openBookModal(${book.id})">
       <div class="book-cover ${coverPath ? 'has-image' : ''}" style="${coverPath ? '' : `background:linear-gradient(135deg,${color}dd 0%,${color}88 50%,${color}44 100%)`}">
         ${coverHtml}${pdfBadge}
       </div>
@@ -362,10 +325,10 @@ function renderBooks(books) {
         <p class="book-author">✍️ ${escHtml(book.author)}</p>
         ${book.year ? `<p class="book-year">📅 ${book.year}</p>` : ''}
         ${priceHtml}
-        <div class="book-footer">
-          <button class="btn-order-now" onclick="openOrderModal(${book.id})">🛍️ اطلب الآن</button>
-          <button class="btn-detail" onclick="addToCart(${book.id})" style="color:var(--gold);border-color:var(--gold)" title="إضافة إلى سلة المشتريات">🛒 للسلة</button>
-          <button class="btn-detail" onclick="openBookModal(${book.id})">تفاصيل</button>
+        <div class="book-footer" style="margin-top:0.8rem">
+          <button class="btn-order-now" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.5rem;padding:0.7rem 1rem" onclick="event.stopPropagation(); openBookModal(${book.id})">
+            <span>📖 تفاصيل الكتاب والطلب</span>
+          </button>
         </div>
       </div>
     </article>`;
@@ -426,15 +389,19 @@ window.openBookModal = async function(bookId) {
   if (actionsEl) {
     const pdfPrice = book.pdf_price ? Number(book.pdf_price) : 5.0;
     actionsEl.innerHTML = `
-      <button class="btn-modal-order" onclick="openOrderModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
-        🛍️ اطلب نسختك الورقية الآن (الدفع عند الاستلام)
-      </button>
-      <button class="btn-modal-order" style="background:rgba(201,168,76,0.15);border:1px solid var(--gold);color:var(--gold)" onclick="addToCart(${book.id}); document.getElementById('bookModal').classList.remove('open');">
-        🛒 أضف هذا الكتاب إلى السلة
-      </button>
-      <button class="btn-modal-paypal" onclick="openPaypalModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
-        💳 شراء نسخة PDF فوراً ($${pdfPrice})
-      </button>
+      <div style="display:flex;flex-direction:column;gap:0.7rem;width:100%">
+        <button class="btn-modal-order" onclick="openOrderModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
+          🛍️ اطلب نسختك الورقية الآن (الدفع عند الاستلام)
+        </button>
+        <button class="btn-modal-order" style="background:rgba(201,168,76,0.15);border:1.5px solid var(--gold);color:var(--gold);font-weight:700" onclick="addToCart(${book.id})">
+          🛒 أضف هذا الكتاب إلى سلة المشتريات
+        </button>
+        ${book.pdf_url ? `
+          <button class="btn-modal-paypal" onclick="openPaypalModal(${book.id}); document.getElementById('bookModal').classList.remove('open');">
+            💳 شراء نسخة PDF فوراً ($${pdfPrice})
+          </button>
+        ` : ''}
+      </div>
     `;
   }
 
@@ -1168,7 +1135,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const contactData  = contact  && typeof contact  === 'object' ? contact  : {};
   const settingsData = settings && typeof settings === 'object' ? settings : {};
 
-  renderAnnouncement(settingsData);
   renderHero(settingsData);
   renderStats(settingsData);
   renderFilterTabs(allCategories);
