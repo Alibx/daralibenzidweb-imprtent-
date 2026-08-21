@@ -3,6 +3,7 @@ import { query } from "../db.js";
 import {
   getSmtpConfig,
   createTransporter,
+  sendMailUnified,
   buildDarEmailHtml,
   ensureSmtpColumns
 } from "../utils/mailer.js";
@@ -95,9 +96,6 @@ router.post("/email/test", async (req, res) => {
       return res.status(400).json({ error: "يرجى تحديد عنوان بريد لاستقبال رسالة الاختبار" });
     }
 
-    const transporter = createTransporter(config);
-    const fromAddr = `"${config.smtp_from_name || 'دار علي بن زيد'}" <${config.smtp_from_email || config.smtp_user}>`;
-
     const html = buildDarEmailHtml({
       recipientName: "المدير العام / مسؤول النظام",
       subject: "🧪 رسالة اختبار خادم البريد (SMTP) — دار علي بن زيد",
@@ -106,8 +104,7 @@ router.post("/email/test", async (req, res) => {
       referenceType: "رسالة فحص"
     });
 
-    await transporter.sendMail({
-      from: fromAddr,
+    await sendMailUnified(config, {
       to: recipient,
       subject: "🧪 رسالة اختبار خادم البريد — دار علي بن زيد",
       html,
@@ -139,9 +136,6 @@ router.post("/email/send", async (req, res) => {
     }
 
     const config = await getSmtpConfig();
-    const transporter = createTransporter(config);
-    const fromAddr = `"${config.smtp_from_name || 'دار علي بن زيد للطباعة والنشر'}" <${config.smtp_from_email || config.smtp_user}>`;
-
     const html = buildDarEmailHtml({
       recipientName: to_name || "",
       subject,
@@ -150,8 +144,7 @@ router.post("/email/send", async (req, res) => {
       referenceType: reference_type === "manuscript" ? "طلب نشر مخطوطة" : (reference_type === "message" ? "رسالة تواصل واردة" : "")
     });
 
-    await transporter.sendMail({
-      from: fromAddr,
+    await sendMailUnified(config, {
       to,
       subject,
       html,

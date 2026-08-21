@@ -80,6 +80,71 @@ export function createTransporter(config) {
   });
 }
 
+export async function sendMailUnified(config, { to, subject, html, text, fromAddr }) {
+  const host = (config.smtp_host || '').trim().toLowerCase();
+  const apiKey = (config.smtp_pass || '').trim();
+
+  // 1. Resend API (HTTP Port 443 - zero blockages on Render / cloud)
+  if (host === 'resend' || apiKey.startsWith('re_')) {
+    const fromEmail = config.smtp_from_email || 'onboarding@resend.dev';
+    const fromName = config.smtp_from_name || 'دار علي بن زيد للنشر';
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: `${fromName} <${fromEmail}>`,
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        html,
+        text: text || ''
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'فشل الإرسال عبر Resend API: تحقق من صحة المفتاح');
+    }
+    return data;
+  }
+
+  // 2. Brevo API (HTTP Port 443)
+  if (host === 'brevo' || (apiKey.startsWith('xkeysib-'))) {
+    const fromEmail = config.smtp_from_email || config.smtp_user;
+    const fromName = config.smtp_from_name || 'دار علي بن زيد للنشر';
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: fromName, email: fromEmail },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text || ''
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'فشل الإرسال عبر Brevo API: ' + JSON.stringify(data));
+    }
+    return data;
+  }
+
+  // 3. Standard SMTP via nodemailer
+  const transporter = createTransporter(config);
+  return await transporter.sendMail({
+    from: fromAddr || `"${config.smtp_from_name || 'دار علي بن زيد'}" <${config.smtp_from_email || config.smtp_user}>`,
+    to,
+    subject,
+    html,
+    text: text || ''
+  });
+}
+
 export function buildDarEmailHtml({ recipientName, subject, messageBody, referenceTitle, referenceType }) {
   // Format message lines
   const formattedBody = String(messageBody || "")
