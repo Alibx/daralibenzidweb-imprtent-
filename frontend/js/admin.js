@@ -1984,9 +1984,12 @@ window.openManuscriptDrawer = function(id) {
   if (prev) {
     prev.innerHTML = `
       <div style="margin-bottom:0.4rem"><strong style="color:var(--gold)">عنوان العمل:</strong> ${escHtml(m.book_title)}</div>
-      <div style="margin-bottom:0.4rem"><strong>المؤلف:</strong> ${escHtml(m.author_name)} (${escHtml(m.author_phone)})</div>
+      <div style="margin-bottom:0.4rem"><strong>المؤلف:</strong> ${escHtml(m.author_name)} (${escHtml(m.author_phone)}) ${m.author_email ? `| 📧 ${escHtml(m.author_email)}` : ''}</div>
       <div style="margin-bottom:0.4rem"><strong>التصنيف:</strong> ${escHtml(m.category || 'عام')} | <strong>الولاية:</strong> ${escHtml(m.wilaya || '—')}</div>
       ${m.summary ? `<div style="margin-top:0.4rem;color:var(--text-muted);font-size:0.85rem"><strong>الملخص:</strong> ${escHtml(m.summary)}</div>` : ''}
+      <div style="margin-top:0.8rem;padding-top:0.6rem;border-top:1px dashed rgba(255,255,255,0.1)">
+        <button type="button" class="btn-save" style="background:#27ae60;border-color:#27ae60;font-size:0.85rem;padding:0.45rem 1rem;display:inline-flex;align-items:center;gap:0.4rem" onclick="openEmailComposer({ recipientName: '${escHtml(m.author_name)}', recipientEmail: '${escHtml(m.author_email || '')}', subject: 'بخصوص طلب نشر مخطوطتكم (${escHtml(m.book_title)}) — دار علي بن زيد', referenceType: 'manuscript', referenceId: ${m.id}, referenceTitle: '${escHtml(m.book_title)}', defaultTemplate: 'manu_review' })">✉️ مراسلة المؤلف عبر البريد الرسمي للدار</button>
+      </div>
     `;
   }
 

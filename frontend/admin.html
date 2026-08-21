@@ -1273,39 +1273,38 @@
             </button>
 
             <div class="settings-section">
-              <h3>📧 إعدادات البريد الإلكتروني الرسمي للدار (SMTP Outbox)</h3>
+              <h3>📧 إعدادات البريد الإلكتروني الرسمي للدار (Email & SMTP Settings)</h3>
               <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1.2rem">
-                يتيح لك هذا القسم ربط إيميل الدار الرسمي (مثل: info@daralibenzid.com أو contact@...) لإرسال الردود ومراسلة المؤلفين مباشرة من لوحة التحكم بنقرة واحدة.
+                تم ربط وتفعيل إيميل الدار الرسمي <strong>info@daralibenzid.dz</strong> بنجاح لإرسال الردود ومراسلة المؤلفين مباشرة من لوحة التحكم بنقرة واحدة.
               </p>
               <form id="smtpSettingsForm" class="admin-form" novalidate>
                 <div class="settings-grid">
                   <div class="form-group">
-                    <label>خادم البريد (SMTP Host) <span style="color:var(--danger)">*</span></label>
-                    <input type="text" id="smtpHostInput" placeholder="مثال: mail.daralibenzid.com أو smtp.stackmail.com" />
+                    <label>خادم البريد (Host / Service) <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="smtpHostInput" placeholder="resend أو smtp.stackmail.com" />
                   </div>
                   <div class="form-group">
-                    <label>المنفذ (SMTP Port)</label>
+                    <label>المنفذ (Port)</label>
                     <select id="smtpPortInput" class="form-select">
-                      <option value="465">465 (SSL / TLS مشفر - الموصى به)</option>
+                      <option value="465">465 (SSL / TLS مشفر - الافتراضي)</option>
                       <option value="587">587 (STARTTLS)</option>
-                      <option value="25">25 (عادي)</option>
                     </select>
                   </div>
                   <div class="form-group">
                     <label>البريد الإلكتروني للدار (Username) <span style="color:var(--danger)">*</span></label>
-                    <input type="email" id="smtpUserInput" placeholder="مثال: contact@daralibenzid.com" />
+                    <input type="email" id="smtpUserInput" placeholder="info@daralibenzid.dz" />
                   </div>
                   <div class="form-group">
-                    <label>كلمة مرور البريد (Email Password) <span style="color:var(--danger)">*</span></label>
-                    <input type="password" id="smtpPassInput" placeholder="أدخل كلمة مرور الإيميل" />
+                    <label>كلمة المرور أو مفتاح الـ API <span style="color:var(--danger)">*</span></label>
+                    <input type="password" id="smtpPassInput" placeholder="re_... أو كلمة المرور" />
                   </div>
                   <div class="form-group">
                     <label>اسم المرسل الظاهر للزبائن</label>
                     <input type="text" id="smtpFromNameInput" placeholder="دار علي بن زيد للطباعة والنشر" value="دار علي بن زيد للطباعة والنشر" />
                   </div>
                   <div class="form-group">
-                    <label>بريد الرد والإرسال (From Email)</label>
-                    <input type="email" id="smtpFromEmailInput" placeholder="contact@daralibenzid.com" />
+                    <label>بريد الإرسال والرد (From Email)</label>
+                    <input type="email" id="smtpFromEmailInput" placeholder="info@daralibenzid.dz" />
                   </div>
                 </div>
                 <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">

@@ -233,7 +233,7 @@ export function buildDarEmailHtml({ recipientName, subject, messageBody, referen
               <td style="background-color:#0D1B2A;padding:20px 25px;text-align:center;color:#a0aec0;font-size:12px;line-height:1.6">
                 <div>دار علي بن زيد للطباعة والنشر — بسكرة، الجزائر 🇩🇿</div>
                 <div style="margin-top:4px">
-                  📧 <a href="mailto:contact@daralibenzid.com" style="color:#C9A84C;text-decoration:none">contact@daralibenzid.com</a> | 
+                  📧 <a href="mailto:info@daralibenzid.dz" style="color:#C9A84C;text-decoration:none">info@daralibenzid.dz</a> | 
                   📞 <span style="color:#e2e8f0">+213 770 92 14 26</span>
                 </div>
                 <div style="margin-top:8px;color:#718096;font-size:11px">تم إرسال هذا البريد تلقائياً من منصة دار علي بن زيد الرسمية.</div>
