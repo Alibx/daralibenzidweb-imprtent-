@@ -1485,6 +1485,84 @@ window.openInvoice = function(orderId) {
   if (modal) modal.style.display = 'flex';
 };
 
+function exportOrdersToExcel() {
+  const ordersToExport = adminOrders.filter(o => {
+    const matchStatus = (orderFilterStatus === 'all') || (o.status === orderFilterStatus);
+    const q = (orderSearchQuery || '').toLowerCase().trim();
+    const matchSearch = !q ||
+      (o.customer_name && o.customer_name.toLowerCase().includes(q)) ||
+      (o.customer_phone && o.customer_phone.includes(q)) ||
+      (o.wilaya_name && o.wilaya_name.toLowerCase().includes(q)) ||
+      (o.book_title && o.book_title.toLowerCase().includes(q)) ||
+      String(o.id).includes(q);
+    return matchStatus && matchSearch;
+  });
+
+  if (!ordersToExport.length) {
+    toast('لا توجد طلبات لتصديرها حالياً', 'error');
+    return;
+  }
+
+  const statusMap = {
+    pending: 'قيد الانتظار',
+    confirmed: 'مؤكد',
+    shipped: 'تم الشحن',
+    delivered: 'تم التوصيل',
+    cancelled: 'ملغي'
+  };
+
+  const deliveryMap = {
+    home: 'توصيل للمنزل',
+    desk: 'استلام من المكتب'
+  };
+
+  let csvContent = '\uFEFF'; // UTF-8 BOM for Microsoft Excel Arabic compatibility
+  csvContent += 'رقم الطلب,تاريخ الطلب,اسم المشتري,رقم الهاتف,الولاية,البلدية,العنوان التفصيلي,نوع التوصيل,الكتاب / تفاصيل الطلب,الكمية,سعر الوحدة (دج),تكلفة التوصيل (دج),قيمة الخصم (دج),كود الخصم,المجموع الإجمالي (دج),حالة الطلب,ملاحظات\n';
+
+  ordersToExport.forEach(o => {
+    const dateStr = o.created_at ? new Date(o.created_at).toLocaleDateString('ar-DZ') : '';
+    const customer = `"${(o.customer_name || '').replace(/"/g, '""')}"`;
+    const phone = `"${(o.customer_phone || '').replace(/"/g, '""')}"`;
+    const wilaya = `"${(o.wilaya_name || '').replace(/"/g, '""')}"`;
+    const commune = `"${(o.commune || '').replace(/"/g, '""')}"`;
+    const address = `"${(o.address || '').replace(/"/g, '""')}"`;
+    const delivery = `"${deliveryMap[o.delivery_type] || o.delivery_type || ''}"`;
+
+    let booksDesc = o.book_title || '';
+    if (o.items) {
+      try {
+        const parsed = JSON.parse(o.items);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          booksDesc = parsed.map(i => `${i.title || i.book_title} (×${i.quantity || 1})`).join(' + ');
+        }
+      } catch { /* ignore */ }
+    }
+    const booksCol = `"${booksDesc.replace(/"/g, '""')}"`;
+    const qty = o.quantity || 1;
+    const unitPrice = Number(o.unit_price || o.book_price || 0);
+    const deliveryPrice = Number(o.delivery_price || 0);
+    const discount = Number(o.discount_amount || 0);
+    const coupon = o.coupon_code ? `"${o.coupon_code}"` : '""';
+    const total = Number(o.total_price || 0);
+    const st = `"${statusMap[o.status] || o.status || ''}"`;
+    const notes = o.notes ? `"${(o.notes || '').replace(/"/g, '""')}"` : '""';
+
+    csvContent += `${o.id},${dateStr},${customer},${phone},${wilaya},${commune},${address},${delivery},${booksCol},${qty},${unitPrice},${deliveryPrice},${discount},${coupon},${total},${st},${notes}\n`;
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `طلبات_دار_علي_بن_زيد_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  toast(`📊 تم تصدير ${ordersToExport.length} طلب إلى ملف Excel بنجاح ✅`);
+}
+
 function initOrdersSection() {
   document.querySelectorAll('#sec-orders .filter-tab').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1501,10 +1579,7 @@ function initOrdersSection() {
   });
 
   document.getElementById('btnExportOrdersExcel')?.addEventListener('click', () => {
-    const apiBase = window.__API_BASE__ || 'https://daralibenzidweb.onrender.com';
-    const exportUrl = `${apiBase.replace(/\/+$/, '')}/api/orders/export?status=${orderFilterStatus || 'all'}`;
-    toast('جارٍ تجهيز وتحميل ملف Excel للطلبات... 📊');
-    window.open(exportUrl, '_blank');
+    exportOrdersToExcel();
   });
 
   const invClose = document.getElementById('invoiceModalClose');

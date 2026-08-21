@@ -2030,3 +2030,136 @@ tr:hover td { background: rgba(201,168,76,0.04); color: var(--text-light); }
 #emailComposeModal.open {
   display: flex !important;
 }
+
+/* ─── ADMIN DRAWER & OVERLAY STYLES ─── */
+.drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 27, 42, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+}
+.drawer-overlay.open {
+  display: block !important;
+}
+
+.admin-drawer {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 620px;
+  background: var(--navy-mid, #0d1b2a);
+  border-left: 1.5px solid var(--border, rgba(201, 168, 76, 0.25));
+  box-shadow: -15px 0 45px rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+  flex-direction: column;
+  overflow-y: auto;
+  direction: rtl;
+}
+.admin-drawer.open {
+  display: flex !important;
+}
+
+.drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border, rgba(201, 168, 76, 0.2));
+  background: rgba(0, 0, 0, 0.25);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.drawer-head-title {
+  color: var(--gold, #c9a84c);
+  font-size: 1.15rem;
+  font-weight: bold;
+}
+
+.drawer-body {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.drawer-foot {
+  padding: 1.2rem 1.5rem;
+  border-top: 1px solid var(--border, rgba(201, 168, 76, 0.2));
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+
+/* ─── TOOLBAR & SEARCH BAR STYLES ─── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  background: rgba(13, 27, 42, 0.45);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(201, 168, 76, 0.18));
+}
+.toolbar .search-box {
+  flex: 1;
+  min-width: 240px;
+  max-width: 380px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border, rgba(201, 168, 76, 0.2));
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+}
+.toolbar .search-box input {
+  background: transparent;
+  border: none;
+  color: var(--text-light, #fff);
+  outline: none;
+  width: 100%;
+  font-size: 0.88rem;
+  font-family: inherit;
+}
+.order-filter-btns {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted, #a0aec0);
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.filter-tab:hover {
+  background: rgba(201, 168, 76, 0.1);
+  color: var(--gold, #c9a84c);
+  border-color: rgba(201, 168, 76, 0.3);
+}
+.filter-tab.active {
+  background: var(--gold, #c9a84c) !important;
+  color: #0d1b2a !important;
+  font-weight: bold;
+  border-color: var(--gold, #c9a84c) !important;
+}
