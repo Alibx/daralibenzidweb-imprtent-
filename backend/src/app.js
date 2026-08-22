@@ -35,8 +35,34 @@ const authLimiter = rateLimit({
 });
 app.use("/api/admin/login", authLimiter);
 
-// Middleware
-app.use(cors());
+// CORS Whitelist Protection
+const ALLOWED_ORIGINS = [
+  "https://daralibenzid.dz",
+  "https://www.daralibenzid.dz",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:8080",
+  "http://127.0.0.1:5500",
+  "http://127.0.0.1:8080",
+  "http://localhost:5500"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed) || allowed === origin)) {
+      return callback(null, true);
+    }
+    if (/^https?:\/\/([a-zA-Z0-9-]+\.)?daralibenzid\.dz$/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("CORS policy: Not allowed by origin"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 

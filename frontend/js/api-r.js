@@ -18,14 +18,34 @@ async function req(m, p, body, useCache = false) {
   }
 
   const o = { method: m, headers: {} };
-  if (body instanceof FormData) o.body = body;
-  else if (body !== undefined) {
+  
+  // Attach JWT Bearer token if present
+  const token = (typeof sessionStorage !== "undefined" && sessionStorage.getItem("dar_admin_token")) ||
+                (typeof localStorage !== "undefined" && localStorage.getItem("dar_admin_token"));
+  if (token) {
+    o.headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (body instanceof FormData) {
+    o.body = body;
+  } else if (body !== undefined) {
     o.headers["Content-Type"] = "application/json";
     o.body = JSON.stringify(body);
   }
 
   const r = await fetch(API_BASE + p, o);
   if (!r.ok) {
+    if (r.status === 401 && typeof window !== "undefined" && window.location.pathname.includes("admin")) {
+      sessionStorage.removeItem("dar_admin_token");
+      sessionStorage.removeItem("dar_admin_session");
+      sessionStorage.removeItem("dar_admin_user");
+      const loginPage = document.getElementById("loginPage");
+      const dashboard = document.getElementById("dashboard");
+      if (loginPage && dashboard) {
+        loginPage.style.display = "flex";
+        dashboard.style.display = "none";
+      }
+    }
     const t = await r.text().catch(() => r.statusText);
     throw new Error(m + " " + p + " → " + r.status + ": " + t);
   }

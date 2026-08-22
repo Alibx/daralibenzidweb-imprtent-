@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = Router();
 
 // GET /manuscripts - List all submitted manuscripts (Admin)
-router.get("/manuscripts", async (req, res) => {
+router.get("/manuscripts", authenticateToken, async (req, res) => {
   try {
     const { status, search } = req.query;
     let sql = "SELECT * FROM manuscripts WHERE 1=1";
@@ -31,7 +32,7 @@ router.get("/manuscripts", async (req, res) => {
 });
 
 // GET /manuscripts/stats - Summary counts
-router.get("/manuscripts/stats", async (_req, res) => {
+router.get("/manuscripts/stats", authenticateToken, async (_req, res) => {
   try {
     const [totalRow] = await query("SELECT COUNT(*) as total FROM manuscripts");
     const [pendingRow] = await query("SELECT COUNT(*) as pending FROM manuscripts WHERE status = 'pending'");
@@ -102,7 +103,7 @@ router.post("/manuscripts", async (req, res) => {
 });
 
 // PUT /manuscripts/:id/status - Update manuscript status & admin notes (Admin)
-router.put("/manuscripts/:id/status", async (req, res) => {
+router.put("/manuscripts/:id/status", authenticateToken, async (req, res) => {
   try {
     const { status, admin_notes } = req.body;
     const allowed = ["pending", "under_review", "accepted", "rejected"];
@@ -140,7 +141,7 @@ router.put("/manuscripts/:id/status", async (req, res) => {
 });
 
 // DELETE /manuscripts/:id - Delete manuscript (Admin)
-router.delete("/manuscripts/:id", async (req, res) => {
+router.delete("/manuscripts/:id", authenticateToken, async (req, res) => {
   try {
     const result = await query("DELETE FROM manuscripts WHERE id = ?", [req.params.id]);
     if (result.affectedRows === 0) {

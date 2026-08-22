@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = Router();
 
 // GET /orders/stats - Summary metrics for admin dashboard
-router.get("/orders/stats", async (_req, res) => {
+router.get("/orders/stats", authenticateToken, async (_req, res) => {
   try {
     const [totalRow] = await query("SELECT COUNT(*) as total, COALESCE(SUM(total_price), 0) as total_revenue FROM orders");
     const [pendingRow] = await query("SELECT COUNT(*) as pending FROM orders WHERE status = 'pending'");
@@ -29,7 +30,7 @@ router.get("/orders/stats", async (_req, res) => {
 });
 
 // GET /orders/export - Export orders to Excel/CSV with UTF-8 BOM (Admin)
-router.get("/orders/export", async (req, res) => {
+router.get("/orders/export", authenticateToken, async (req, res) => {
   try {
     const { status } = req.query;
     let sql = "SELECT * FROM orders WHERE 1=1";
@@ -101,7 +102,7 @@ router.get("/orders/export", async (req, res) => {
 });
 
 // GET /orders - List all orders with filters
-router.get("/orders", async (req, res) => {
+router.get("/orders", authenticateToken, async (req, res) => {
   try {
     const { status, search } = req.query;
     let sql = "SELECT * FROM orders WHERE 1=1";
@@ -128,7 +129,7 @@ router.get("/orders", async (req, res) => {
 });
 
 // GET /orders/:id - Get single order
-router.get("/orders/:id", async (req, res) => {
+router.get("/orders/:id", authenticateToken, async (req, res) => {
   try {
     const rows = await query("SELECT * FROM orders WHERE id = ?", [req.params.id]);
     if (!rows[0]) return res.status(404).json({ error: "Order not found" });
@@ -302,7 +303,7 @@ router.post("/orders", async (req, res) => {
 });
 
 // PUT /orders/:id/status - Update order status (Admin)
-router.put("/orders/:id/status", async (req, res) => {
+router.put("/orders/:id/status", authenticateToken, async (req, res) => {
   try {
     const { status, notes } = req.body;
     const allowed = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
@@ -340,7 +341,7 @@ router.put("/orders/:id/status", async (req, res) => {
 });
 
 // DELETE /orders/:id - Delete order (Admin)
-router.delete("/orders/:id", async (req, res) => {
+router.delete("/orders/:id", authenticateToken, async (req, res) => {
   try {
     const result = await query("DELETE FROM orders WHERE id = ?", [req.params.id]);
     if (result.affectedRows === 0) {

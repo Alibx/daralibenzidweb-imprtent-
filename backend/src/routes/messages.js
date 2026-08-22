@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/messages", async (_req, res) => {
+// GET /messages - List all messages (Admin only)
+router.get("/messages", authenticateToken, async (_req, res) => {
   try {
     const rows = await query("SELECT * FROM messages ORDER BY id DESC");
     const formatted = rows.map((m) => ({
@@ -17,6 +19,7 @@ router.get("/messages", async (_req, res) => {
   }
 });
 
+// POST /messages - Create contact message (Public form)
 router.post("/messages", async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
@@ -39,7 +42,8 @@ router.post("/messages", async (req, res) => {
   }
 });
 
-router.patch("/messages/:id", async (req, res) => {
+// PATCH /messages/:id - Toggle read status (Admin only)
+router.patch("/messages/:id", authenticateToken, async (req, res) => {
   try {
     const { read, is_read } = req.body;
     const rawValue = read ?? is_read ?? false;
@@ -57,7 +61,8 @@ router.patch("/messages/:id", async (req, res) => {
   }
 });
 
-router.delete("/messages/:id", async (req, res) => {
+// DELETE /messages/:id - Delete single message (Admin only)
+router.delete("/messages/:id", authenticateToken, async (req, res) => {
   try {
     await query("DELETE FROM messages WHERE id = ?", [req.params.id]);
     res.json({ success: true });
@@ -67,8 +72,8 @@ router.delete("/messages/:id", async (req, res) => {
   }
 });
 
-// BULK DELETE MESSAGES
-router.post("/messages/bulk-delete", async (req, res) => {
+// BULK DELETE MESSAGES (Admin only)
+router.post("/messages/bulk-delete", authenticateToken, async (req, res) => {
   try {
     const { ids, all } = req.body || {};
     if (all) {
@@ -86,8 +91,8 @@ router.post("/messages/bulk-delete", async (req, res) => {
   }
 });
 
-// BULK MARK READ/UNREAD MESSAGES
-router.post("/messages/bulk-read", async (req, res) => {
+// BULK MARK READ/UNREAD MESSAGES (Admin only)
+router.post("/messages/bulk-read", authenticateToken, async (req, res) => {
   try {
     const { ids, is_read, all } = req.body || {};
     const val = is_read ? 1 : 0;

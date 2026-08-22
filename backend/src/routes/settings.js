@@ -1,11 +1,18 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { authenticateToken, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
+// GET /settings - Publicly safe presentation settings only (Zero secrets leaked)
 router.get("/settings", async (_req, res) => {
   try {
-    const rows = await query("SELECT * FROM settings LIMIT 1");
+    const rows = await query(`
+      SELECT 
+        hero_title, hero_subtitle, stat_years, stat_books, stat_readers, copyright,
+        announcement_text, announcement_active, announcement_link
+      FROM settings LIMIT 1
+    `);
     res.json(rows[0] || {});
   } catch (error) {
     console.error("Error fetching settings:", error);
@@ -13,7 +20,8 @@ router.get("/settings", async (_req, res) => {
   }
 });
 
-router.put("/settings", async (req, res) => {
+// PUT /settings - Admin only update
+router.put("/settings", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const {
       hero_title,

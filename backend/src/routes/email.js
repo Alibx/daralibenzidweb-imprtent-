@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { authenticateToken } from "../middleware/auth.js";
 import {
   getSmtpConfig,
   createTransporter,
@@ -9,6 +10,9 @@ import {
 } from "../utils/mailer.js";
 
 const router = Router();
+
+// Protect all email endpoints with Admin JWT
+router.use(authenticateToken);
 
 // GET current SMTP settings (for Admin Panel settings)
 router.get("/email/settings", async (_req, res) => {

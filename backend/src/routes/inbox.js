@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { authenticateToken } from "../middleware/auth.js";
 import {
   ensureInboxTable,
   getImapConfig,
@@ -7,6 +8,9 @@ import {
 } from "../utils/imapReceiver.js";
 
 const router = Router();
+
+// Protect all inbox routes with Admin JWT
+router.use(authenticateToken);
 
 // GET Inbox Emails list
 router.get("/inbox", async (req, res) => {

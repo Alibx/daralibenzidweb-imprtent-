@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { authenticateToken } from "../middleware/auth.js";
 
 const router = Router();
 
-// POST /coupons/validate - Validate coupon for checkout
+// POST /coupons/validate - Validate coupon for checkout (Public)
 router.post("/coupons/validate", async (req, res) => {
   try {
     const { code, subtotal = 0 } = req.body;
@@ -65,8 +66,8 @@ router.post("/coupons/validate", async (req, res) => {
   }
 });
 
-// GET /coupons - List all coupons (Admin)
-router.get("/coupons", async (_req, res) => {
+// GET /coupons - List all coupons (Admin only)
+router.get("/coupons", authenticateToken, async (_req, res) => {
   try {
     const rows = await query("SELECT * FROM coupons ORDER BY id DESC");
     res.json(rows);
@@ -76,8 +77,8 @@ router.get("/coupons", async (_req, res) => {
   }
 });
 
-// POST /coupons - Create a new coupon (Admin)
-router.post("/coupons", async (req, res) => {
+// POST /coupons - Create a new coupon (Admin only)
+router.post("/coupons", authenticateToken, async (req, res) => {
   try {
     const {
       code,
@@ -120,8 +121,8 @@ router.post("/coupons", async (req, res) => {
   }
 });
 
-// PUT /coupons/:id - Update coupon (Admin)
-router.put("/coupons/:id", async (req, res) => {
+// PUT /coupons/:id - Update coupon (Admin only)
+router.put("/coupons/:id", authenticateToken, async (req, res) => {
   try {
     const {
       code,
@@ -160,8 +161,8 @@ router.put("/coupons/:id", async (req, res) => {
   }
 });
 
-// DELETE /coupons/:id - Delete coupon (Admin)
-router.delete("/coupons/:id", async (req, res) => {
+// DELETE /coupons/:id - Delete coupon (Admin only)
+router.delete("/coupons/:id", authenticateToken, async (req, res) => {
   try {
     await query("DELETE FROM coupons WHERE id = ?", [req.params.id]);
     res.json({ success: true, message: "تم حذف الكوبون بنجاح" });

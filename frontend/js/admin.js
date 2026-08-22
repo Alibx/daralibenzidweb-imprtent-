@@ -88,7 +88,7 @@ function initAuth() {
   const logoutBtn = document.getElementById('logoutBtn');
 
   function checkSession() {
-    const ok = sessionStorage.getItem('dar_admin_session') === 'true';
+    const ok = sessionStorage.getItem('dar_admin_session') === 'true' && !!sessionStorage.getItem('dar_admin_token');
     loginPage.style.display = ok ? 'none' : 'flex';
     dashboard.style.display = ok ? 'flex' : 'none';
   }
@@ -101,9 +101,10 @@ function initAuth() {
     btn.disabled = true;
     try {
       const result = await api.post('/api/admin/login', { username: user, password: pass });
-      if (result.success) {
+      if (result.success && result.token) {
         currentUser = result.admin;
         sessionStorage.setItem('dar_admin_session', 'true');
+        sessionStorage.setItem('dar_admin_token', result.token);
         sessionStorage.setItem('dar_admin_user', JSON.stringify(result.admin));
         loginError.classList.remove('show');
         checkSession();
@@ -123,12 +124,13 @@ function initAuth() {
   logoutBtn.addEventListener('click', () => {
     currentUser = null;
     sessionStorage.removeItem('dar_admin_session');
+    sessionStorage.removeItem('dar_admin_token');
     sessionStorage.removeItem('dar_admin_user');
     checkSession();
   });
 
   checkSession();
-  if (sessionStorage.getItem('dar_admin_session') === 'true') {
+  if (sessionStorage.getItem('dar_admin_session') === 'true' && sessionStorage.getItem('dar_admin_token')) {
     renderAllSections();
   }
 }

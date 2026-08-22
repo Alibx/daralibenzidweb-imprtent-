@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { query } from "../db.js";
+import { generateToken, authenticateToken, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -29,8 +30,16 @@ router.post("/admin/login", async (req, res) => {
       return res.status(403).json({ success: false, message: "تم تعطيل هذا الحساب. يرجى التواصل مع المدير العام" });
     }
 
+    const token = generateToken({
+      id: admin.id,
+      username: admin.username,
+      name: admin.name || (admin.role === 'admin' ? 'المدير العام' : 'موظف'),
+      role: admin.role || 'admin'
+    });
+
     res.json({
       success: true,
+      token,
       admin: {
         id: admin.id,
         username: admin.username,
@@ -45,10 +54,10 @@ router.post("/admin/login", async (req, res) => {
 });
 
 // ─── CHANGE PASSWORD ──────────────────────────────────────────────────────────
-router.put("/admin/change-password", async (req, res) => {
+router.put("/admin/change-password", authenticateToken, async (req, res) => {
   try {
     const { username, currentPassword, newPassword } = req.body;
-    const targetUsername = username || 'admin';
+    const targetUsername = username || req.user?.username || 'admin';
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ success: false, message: "البيانات غير مكتملة" });
@@ -83,7 +92,7 @@ router.put("/admin/change-password", async (req, res) => {
 // ─── STAFF MANAGEMENT CRUD ────────────────────────────────────────────────────
 
 // GET all staff members
-router.get("/admin/staff", async (req, res) => {
+router.get("/admin/staff", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const staff = await query(
       "SELECT id, username, name, role, is_active, created_at FROM admins ORDER BY id ASC"
@@ -96,7 +105,7 @@ router.get("/admin/staff", async (req, res) => {
 });
 
 // CREATE new staff member
-router.post("/admin/staff", async (req, res) => {
+router.post("/admin/staff", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { username, name, password, role } = req.body;
 
@@ -139,7 +148,7 @@ router.post("/admin/staff", async (req, res) => {
 });
 
 // UPDATE staff member
-router.put("/admin/staff/:id", async (req, res) => {
+router.put("/admin/staff/:id", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const staffId = Number(req.params.id);
     const { name, role, password, is_active } = req.body;
@@ -174,7 +183,7 @@ router.put("/admin/staff/:id", async (req, res) => {
 });
 
 // DELETE staff member
-router.delete("/admin/staff/:id", async (req, res) => {
+router.delete("/admin/staff/:id", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const staffId = Number(req.params.id);
     if (staffId === 1) {
